@@ -1,2 +1,16 @@
 .DS_Store
 local/
+
+# Python / backend
+backend/.venv/
+backend/.env
+**/__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+
+# Node / frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+frontend/.env.local
