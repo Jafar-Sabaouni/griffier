@@ -90,6 +90,7 @@ Detailed, task-specific instructions live in `.agents/skills/`. Read a skill's `
 | `typescript-standards`    | Writing, reviewing or refactoring TypeScript                                                                 |
 | `react-architecture`      | Building, reviewing or refactoring React components and hooks                                                |
 | `ui-design-core`          | Designing UI, theming, tokens, spacing, typography                                                           |
+| `webapp-testing`          | Checking UI changes in the running app with Playwright: screenshots, DOM inspection, browser console logs    |
 
 ## Commits and branches
 
