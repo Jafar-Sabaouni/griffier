@@ -65,7 +65,7 @@ npm run dev                               # check UI changes in the running app,
 - API keys come from environment variables. Never commit them.
 - Follow accepted decisions in `documentation/decisions/`; supersede the decision file (using the `technical-decisions` skill) before changing an accepted provider or architecture boundary.
 - Keep `documentation/` up to date as the project evolves: when a task adds or changes endpoints, data contracts, architecture, setup, or introduces a notable technical trade-off, update the relevant file in `documentation/` (or add a new decision record) as part of the same task.
-- Before handing off any task, have a separate read-only reviewer subagent review the changes and return `APPROVE` (see `.agents/skills/workflow/SKILL.md`).
+- Before handing off any task, have a separate read-only reviewer subagent review the changes and return `APPROVE`.
 
 ## Architecture Principles
 
@@ -84,7 +84,6 @@ Detailed, task-specific instructions live in `.agents/skills/`. Read a skill's `
 
 | Skill                     | Use when                                                                                                     |
 | ------------------------- | ------------------------------------------------------------------------------------------------------------ |
-| `workflow`                | Picking up, verifying, independently reviewing, and handing off a task (local-only agent workflow)           |
 | `technical-decisions`     | Recording or superseding architecture, model, provider, or trade-off decisions in `documentation/decisions/` |
 | `fastapi`                 | Building, structuring, or reviewing FastAPI routes, dependencies, and schemas                                |
 | `python-type-safety`      | Writing or reviewing typed Python (`Protocol`s, generics, `pyright` compliance)                              |
@@ -100,4 +99,3 @@ Detailed, task-specific instructions live in `.agents/skills/`. Read a skill's `
 - **Ownership:** All Git mutations (branching, committing, pushing) and GitHub actions (PRs, merges, project board updates) are executed by the user after reviewing the agent's verified hand-off.
 - **Branch convention:** `<type>/p<phase>-<description>`, e.g. `feat/p1-audio-upload` (`feat`, `bugs`, `refactor`, `chore`).
 - **Commit convention:** `<type>(<phase>): <summary>`, e.g. `feat(p2): add transcription pipeline`.
-- The full workflow is in `.agents/skills/workflow/SKILL.md`.
