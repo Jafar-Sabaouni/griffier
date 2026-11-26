@@ -38,15 +38,15 @@ To start a server, run `--help` first, then use the helper:
 
 **Single server:**
 ```bash
-python scripts/with_server.py --server "npm run dev" --port 5173 -- python your_automation.py
+python3 scripts/with_server.py --server "npm run dev" --port 5173 -- uv run --with playwright python your_automation.py
 ```
 
 **Multiple servers (e.g., backend + frontend):**
 ```bash
-python scripts/with_server.py \
-  --server "cd backend && python server.py" --port 3000 \
+python3 scripts/with_server.py \
+  --server "cd backend && uv run uvicorn griffier.main:app --port 8000" --port 8000 \
   --server "cd frontend && npm run dev" --port 5173 \
-  -- python your_automation.py
+  -- uv run --with playwright python your_automation.py
 ```
 
 To create an automation script, include only Playwright logic (servers are managed automatically):
@@ -64,9 +64,12 @@ with sync_playwright() as p:
 
 ## Reconnaissance-Then-Action Pattern
 
-1. **Inspect rendered DOM**:
+1. **Inspect rendered DOM** (save screenshots in `local/ui/`):
    ```python
-   page.screenshot(path='/tmp/inspect.png', full_page=True)
+   from pathlib import Path
+
+   Path("local/ui").mkdir(parents=True, exist_ok=True)
+   page.screenshot(path='local/ui/inspect.png', full_page=True)
    content = page.content()
    page.locator('button').all()
    ```
@@ -82,6 +85,8 @@ with sync_playwright() as p:
 
 ## Best Practices
 
+- **Save all screenshots to `local/ui/`** (create the directory if missing with `Path("local/ui").mkdir(parents=True, exist_ok=True)`)
+- **Run Playwright scripts via `uv run --with playwright python ...`**
 - **Use bundled scripts as black boxes** - To accomplish a task, consider whether one of the scripts available in `scripts/` can help. These scripts handle common, complex workflows reliably without cluttering the context window. Use `--help` to see usage, then invoke directly. 
 - Use `sync_playwright()` for synchronous scripts
 - Always close the browser when done
