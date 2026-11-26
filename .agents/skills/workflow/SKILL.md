@@ -5,7 +5,7 @@ description: >-
 tier: on-demand
 author: JafarS 
 version: 1.0.0
-last_update: 2026-09-20
+last_update: 2026-11-26
 ---
 
 # Griffier Workflow Skill
@@ -49,9 +49,10 @@ Backlog  →  Ready  →  In progress  →  In review  →  Done
 1. **Pick** a task from `Ready` (lowest number first, unless the user names one). Skip a task whose dependencies are still in `Backlog` or `Ready`.
 2. **Start**: move it to `In progress` on the active board.
 3. **Branch**: create the branch, stacked on its parent if it depends on unmerged work (`references/stacked-prs.md`).
-4. **Implement** and run the verification in section 5.
-5. **Commit and hand off**: commit, then move the task to `In review` as the board file describes.
-6. **Done**: only the user moves a task to `Done` (or tells the agent to).
+4. **Implement & verify**: do the work and run the verification checks in section 5.
+5. **Independent agent review**: spawn a separate reviewer subagent to audit the changes (section 5.1). Fix any blocking findings and re-verify before proceeding.
+6. **Commit and hand off**: commit, log verification + review summary in the task notes, then move the task to `In review` as the board file describes.
+7. **Done**: only the user moves a task to `Done` (or tells the agent to).
 
 The board file says how each step is done on that board.
 
@@ -95,6 +96,22 @@ Run the checks for every part of the stack the task touches. All must pass befor
 * UI changes: check them in the running app (`npm run dev`), including mobile width.
 
 Tick acceptance items only when they are met. Anything not met is written down in the task, never ticked.
+
+### 5.1 Independent Agent Review (Required Before Hand-Off)
+
+Before committing or moving a task to `In review`, invoke a **separate, read-only reviewer subagent** (fresh context — never self-review) with the task file and the list of changed files/diff.
+
+The reviewer must check:
+1. **Acceptance & scope:** Every ticked acceptance item is met; no unrelated out-of-scope edits.
+2. **Architecture & rules:** Compliance with `AGENTS.md` (especially the 8 Architecture Principles, protocol boundaries, no leaked vendor types, no live API calls in tests, no hardcoded secrets).
+3. **Technical decisions:** Alignment with accepted files in `documentation/decisions/`.
+4. **Stack standards:** Adherence to the relevant skills (`fastapi`, `python-type-safety`, `async-python-patterns`, `python-testing-patterns`, `typescript-standards`, `react-architecture`, `ui-design-core`).
+5. **Correctness & tests:** Edge cases, error handling, and meaningful offline test coverage.
+
+The reviewer responds with either **`APPROVE`** or **`CHANGES_REQUESTED`** (with specific file/line findings split into *blocking* vs. *minor*).
+
+* If `CHANGES_REQUESTED`: resolve all blocking findings, re-run the section 5 verification commands, and message the same reviewer subagent to re-check until it returns `APPROVE` (escalate to the user if unresolved after 2 rounds).
+* Record the reviewer's verdict and any changes made in the task's `Notes` section before committing.
 
 ---
 

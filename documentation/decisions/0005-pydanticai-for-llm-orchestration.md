@@ -20,8 +20,8 @@ Griffier needs reliable structured outputs (claims linked to transcript passages
 
 - **Model- and endpoint-agnostic:** Separating `LLM_PROVIDER` (API protocol such as `anthropic`, `openai`, or `google`), `LLM_MODEL`, optional `LLM_BASE_URL`, and `LLM_API_KEY` lets Griffier target hosted APIs, Anthropic/OpenAI-compatible providers (such as DeepSeek or OpenRouter), or local models purely through `.env`.
 - **Validated structured outputs:** Output schemas are standard Pydantic models; if an LLM returns malformed data or fails validation, PydanticAI feeds the error back and retries automatically.
-- **Typed tool injection:** External capabilities such as `SourceSearcher` can be injected cleanly into agent tools with full static type checking.
-- **Built-in offline testing:** `TestModel` and `FunctionModel` allow deterministic tests of prompts, schemas, and tool wiring without making live LLM calls.
+- **Language-aware prompts:** Structured prompts instruct the model to match the interview's language (Dutch or English) for claims, explanations, and search queries.
+- **Built-in offline testing:** `TestModel` and `FunctionModel` allow deterministic tests of prompts and schemas without making live LLM calls.
 
 ## Alternatives Considered
 

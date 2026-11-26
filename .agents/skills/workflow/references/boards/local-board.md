@@ -59,17 +59,20 @@ Create the branch from `SKILL.md` section 4, choosing the base as in `references
 ### Step 2.3: Implement and Verify
 Do the work and run `SKILL.md` section 5. Tick the acceptance items that are met.
 
-### Step 2.4: Commit and Hand Off
-1. Commit on the task branch with the task id, e.g. `feat(T-012): add Groq Whisper transcription pipeline`.
-2. Add a dated Notes entry: what changed, how it was verified, open questions.
+### Step 2.4: Independent Agent Review
+Invoke a separate reviewer subagent per `SKILL.md` section 5.1. Resolve any blocking findings and re-run verification until the reviewer returns `APPROVE`.
+
+### Step 2.5: Commit and Hand Off
+1. Commit on the task branch with the task id, e.g. `feat(T-012): add transcription pipeline`.
+2. Add a dated Notes entry: what changed, how it was verified, reviewer verdict (and fixes made), and any open questions.
 3. Move it to review:
    ```bash
    mv .agents/project_board/in_progress/T-012-*.md .agents/project_board/review/
    ```
 4. Go back to Step 2.1.
 
-### Step 2.5: Changes Requested
-Move the task back to `in_progress/`, make the fix as described in `references/stacked-prs.md` section 3, then move it back to `review/` with a Notes line. Tasks stacked above it stay in `review/` with a Notes line saying they were rebased.
+### Step 2.6: Changes Requested
+Move the task back to `in_progress/`, make the fix as described in `references/stacked-prs.md` section 3, re-run verification and reviewer check, then move it back to `review/` with a Notes line. Tasks stacked above it stay in `review/` with a Notes line saying they were rebased.
 
 ---
 

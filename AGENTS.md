@@ -12,18 +12,22 @@ The full brief is in `project.md` (Dutch).
 - **Backend:** Python (`uv`), FastAPI, PydanticAI (configured via `LLM_PROVIDER`, `LLM_MODEL`, `LLM_BASE_URL`, `LLM_API_KEY`), AssemblyAI `STT-3.7` (batch), Tavily REST (`httpx`), in-memory storage. Every external dependency sits behind a Python `Protocol` boundary (`Transcriber`, `IntelligenceAnalyzer`, `SourceSearcher`, `InterviewRepository`).
 - **Frontend:** Vite + React + TypeScript (strict) + React Router.
 
-## Technical Decisions
+## Technical Decisions & Documentation
 
-Accepted architecture and technology decisions live in `documentation/decisions/` (indexed in `documentation/decisions/README.md`). Check relevant decision files before changing providers, boundaries, or flows, and follow `.agents/skills/technical-decisions/SKILL.md` whenever recording or superseding a decision:
+Read the relevant docs before implementing or changing architecture, endpoints, or providers:
 
-- `0001` Speech-to-text: AssemblyAI `STT-3.7` (batch, speaker diarization + speaker identification)
-- `0002` Persistence: In-memory storage for the prototype (`InterviewRepository`)
-- `0003` Backend API: FastAPI
-- `0004` Decoupling: Provider-agnostic Python `Protocol` boundaries
-- `0005` LLM layer: PydanticAI with explicit 4-variable `.env` configuration
-- `0006` External sources: Tavily REST API via `httpx` behind `SourceSearcher`
-- `0007` Frontend: React, TypeScript, Vite, and React Router
-- `0008` Processing flow: Single-request audio upload/recording → transcript + intelligence (with loading skeleton)
+- **API architecture:** `documentation/api/architecture.md` — 4-layer FastAPI structure (`api/`, `domain/`, `services/`, `adapters/`), REST endpoints, processing flows, validation, and error handling.
+- **Prototype scope:** `documentation/decisions/prototype-scope.md` — production features intentionally deferred (auth, persistent DB, live streaming/job queues, rate limiting/observability). Do not add them unless explicitly requested.
+- **Technical decisions:** `documentation/decisions/` (indexed in `documentation/decisions/README.md`). Follow `.agents/skills/technical-decisions/SKILL.md` whenever recording or superseding a decision:
+
+  - `0001` Speech-to-text: AssemblyAI `STT-3.7` (batch, speaker diarization + speaker identification)
+  - `0002` Persistence: In-memory storage for the prototype (`InterviewRepository`)
+  - `0003` Backend API: FastAPI
+  - `0004` Decoupling: Provider-agnostic Python `Protocol` boundaries
+  - `0005` LLM layer: PydanticAI with explicit 4-variable `.env` configuration
+  - `0006` External sources: Tavily REST API via `httpx` behind `SourceSearcher`
+  - `0007` Frontend: React, TypeScript, Vite, and React Router
+  - `0008` Processing flow: Single-request audio upload/recording → transcript + intelligence (with loading skeleton)
 
 ## Commands
 
@@ -57,6 +61,7 @@ npm run dev                               # check UI changes in the running app,
 - External sources shown in the Intelligence panel must be real, retrieved results. Never let a model invent URLs or citations.
 - API keys come from environment variables. Never commit them.
 - Follow accepted decisions in `documentation/decisions/`; supersede the decision file (using the `technical-decisions` skill) before changing an accepted provider or architecture boundary.
+- Before committing or moving a task to `In review`, have a separate read-only reviewer subagent review the changes and return `APPROVE` (see `.agents/skills/workflow/SKILL.md`).
 
 ## Architecture Principles
 

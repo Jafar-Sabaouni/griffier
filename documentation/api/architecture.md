@@ -7,7 +7,7 @@ Architecture and HTTP contract for Griffier's FastAPI backend, aligned with [dec
 ```text
 backend/src/griffier/
 ├── api/            # Thin FastAPI routers, HTTP schemas, exception handlers
-├── domain/         # Pure Pydantic models (Interview, Segment, Claim, Source) + Protocols
+├── domain/         # Pure Pydantic models (Interview, TranscriptSegment, Claim, ExternalSource) + Protocols
 ├── services/       # Use-case orchestration talking exclusively to Protocols
 ├── adapters/       # Concrete providers (AssemblyAI, PydanticAI, Tavily, InMemoryRepository)
 ├── config.py       # Typed environment settings (pydantic-settings)
@@ -15,10 +15,17 @@ backend/src/griffier/
 ```
 
 - **`api/`** handles HTTP concerns only: multipart upload validation, status codes, dependency injection, and mapping domain errors to JSON responses.
-- **`domain/`** defines Griffier's own data models and `Protocol` interfaces (`Transcriber`, `IntelligenceAnalyzer`, `SourceSearcher`, `InterviewRepository`) with zero external provider imports.
-- **`services/`** coordinates end-to-end flows (`process_audio`, `mark_passage`) against protocols so business logic stays independent of vendors and HTTP.
+- **`domain/`** defines Griffier's own data models (`Interview`, `TranscriptSegment`, `Claim`, `ExternalSource`) and `Protocol` interfaces (`Transcriber`, `IntelligenceAnalyzer`, `SourceSearcher`, `InterviewRepository`) with zero external provider imports.
+- **`services/`** coordinates end-to-end flows (`process_audio`, `mark_passage`, `remove_claim`) against protocols so business logic stays independent of vendors and HTTP.
 - **`adapters/`** translates vendor payloads into Griffier domain models at the edge, ensuring no vendor-specific types leak inward.
 - **`dependencies.py`** wires concrete adapters from `config.py` in one place, allowing providers to be swapped or faked cleanly.
+
+## Passage-to-Claim Anchoring
+
+Every `Claim` links back to the transcript through a deterministic anchor:
+
+- **AI-suggested claims (`origin="ai"`):** Anchored by `segment_id` + `quote`. On the frontend, the quote is matched inside that segment (exact or normalized substring), falling back to highlighting the full segment if the LLM slightly paraphrases.
+- **Journalist-marked passages (`origin="journalist"`):** Anchored by `segment_id`, `quote`, and character offsets (`start_offset`, `end_offset`) within that segment.
 
 ## Processing Flows
 
@@ -29,9 +36,8 @@ Both uploaded audio files and stopped browser recordings go through one endpoint
 ```text
 Audio upload
   → AssemblyAITranscriber (STT-3.7: diarization + speaker ID + timestamps)
-  → PydanticAIAnalyzer (topics, verifiable claims, search queries, short explanations)
-  → TavilySearcher (concurrent httpx searches via asyncio.gather for real URLs/snippets)
-  → PydanticAIAnalyzer (optional source-grounded summary referencing snippets by ID)
+  → PydanticAIAnalyzer (topics, verifiable claims, search queries, short explanations in interview language)
+  → TavilySearcher (concurrent httpx searches via asyncio.gather(..., return_exceptions=True))
   → InMemoryInterviewRepository (store & return complete Interview)
 ```
 
@@ -39,22 +45,27 @@ Every URL returned to the client comes directly from `SourceSearcher` results; t
 
 ### 2. Manual Passage Marking (`POST /api/interviews/{id}/claims`)
 
-When a journalist marks a transcript passage as "to fact-check", the service generates a short explanation and search query for that quote, retrieves real sources via `SourceSearcher`, appends the claim (`origin="journalist"`), and returns the enriched claim with its sources.
+When a journalist marks a transcript passage as "to fact-check", the claim is saved immediately (`origin="journalist"`). The service then generates a short explanation and search query for that quote, retrieves real sources via `SourceSearcher`, and returns the enriched claim.
 
 ## Endpoints
 
 | Method & Path | Purpose | Status Codes |
 | :--- | :--- | :--- |
 | `GET /api/health` | Liveness check | `200` |
+| `GET /api/interviews` | List interviews in the current in-memory session | `200` |
 | `POST /api/interviews` | Upload audio file or stopped recording; returns transcript, claims, and external sources | `201`, `400`, `413`, `415`, `502` |
 | `GET /api/interviews/{id}` | Retrieve an existing interview by ID | `200`, `404` |
-| `POST /api/interviews/{id}/claims` | Mark a transcript passage for fact-checking and retrieve supporting sources | `201`, `404`, `422`, `502` |
+| `POST /api/interviews/{id}/claims` | Mark a transcript passage for fact-checking and retrieve supporting sources | `201`, `404`, `422` |
 | `DELETE /api/interviews/{id}/claims/{claim_id}` | Remove or dismiss a claim | `204`, `404` |
 
-## Validation & Error Handling
+## Validation, Timeouts & Graceful Degradation
 
-- **Edge upload guards:** Reject empty uploads (`400`), unsupported audio MIME types (`415`), and oversized files (`413`) before calling external APIs.
-- **Consistent error responses:** Domain and upstream exceptions are caught by centralized FastAPI exception handlers and returned as structured JSON (`404` for unknown IDs, `502` for upstream STT/LLM/search failures) without exposing raw stack traces or vendor payloads.
+- **Upload guards:** Reject empty uploads (`400`), files over 25 MB (`413`), and unsupported audio MIME types (`415`). Accepted types include `audio/mpeg`, `audio/wav`, `audio/webm` (Chrome/Firefox `MediaRecorder`), `audio/mp4` / `audio/m4a` (Safari `MediaRecorder`), and `audio/ogg`.
+- **Timeouts:** Configure generous end-to-end timeouts (120s on frontend `fetch`, Vite dev proxy, and backend `httpx` clients) to accommodate single-request STT + LLM + search runs.
+- **Graceful degradation:**
+  - In `POST /api/interviews`, once transcription succeeds, the interview is preserved even if one or more Tavily searches fail (`asyncio.gather(..., return_exceptions=True)`), returning a `warnings` list rather than discarding a completed transcript.
+  - In `POST /api/interviews/{id}/claims`, the journalist's marked passage is always persisted first; if enrichment or search fails, the endpoint still returns `201` with the saved claim and a warning.
+- **Consistent error responses:** Domain and upstream exceptions are caught by centralized FastAPI exception handlers and returned as structured JSON (`404` for unknown IDs, `502` when transcription fails) without exposing raw stack traces or vendor payloads.
 
 ## Testing Strategy
 
