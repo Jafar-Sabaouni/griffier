@@ -1,0 +1,33 @@
+{
+  "version": 2,
+  "skills": {
+    "async-python-patterns": {
+      "source": "wshobson/agents",
+      "commit": "c96b5f6552dba32e4492307493ee613581430715",
+      "sourceType": "github",
+      "skillPath": "plugins/python-development/skills/async-python-patterns/SKILL.md",
+      "computedHash": "5ed4e3ea95b394323088b0754668d72d8d0f70905826be41bf3b440f71fa9f07"
+    },
+    "fastapi": {
+      "source": "fastapi/fastapi",
+      "commit": "05e6df7e906c3decba377c37548019973f40bf15",
+      "sourceType": "github",
+      "skillPath": "fastapi/.agents/skills/fastapi/SKILL.md",
+      "computedHash": "141f0146e357365d518029ccc74e5b0a256f9a352573c65856780995d1bea52c"
+    },
+    "python-testing-patterns": {
+      "source": "wshobson/agents",
+      "commit": "c96b5f6552dba32e4492307493ee613581430715",
+      "sourceType": "github",
+      "skillPath": "plugins/python-development/skills/python-testing-patterns/SKILL.md",
+      "computedHash": "8113c05a831d4872c9294b0df26a335c09af423ee2e23d8b9b6817b300d96796"
+    },
+    "python-type-safety": {
+      "source": "wshobson/agents",
+      "commit": "c96b5f6552dba32e4492307493ee613581430715",
+      "sourceType": "github",
+      "skillPath": "plugins/python-development/skills/python-type-safety/SKILL.md",
+      "computedHash": "f993e4c721397568ebfa3f40693c768470c10bf5966fc0aa071925eaa3b61918"
+    }
+  }
+}
