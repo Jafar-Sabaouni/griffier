@@ -1,6 +1,6 @@
 # Backend API Architecture
 
-Architecture and HTTP contract for Griffier's FastAPI backend, aligned with [decisions 0001–0008](../decisions/README.md) and the [prototype scope](../decisions/prototype-scope.md).
+Architecture and HTTP contract for Griffier's FastAPI backend, aligned with [decisions 0001–0008](../decisions/README.md), [diagrams](../diagrams/), and the [prototype scope](../decisions/prototype-scope.md).
 
 ## Module Structure
 
@@ -29,23 +29,31 @@ Every `Claim` links back to the transcript through a deterministic anchor:
 
 ## Processing Flows
 
+Detailed Mermaid sequence diagrams live in [`documentation/diagrams/`](../diagrams/).
+
 ### 1. Audio Ingestion (`POST /api/interviews`)
 
 Both uploaded audio files and stopped browser recordings go through one endpoint ([0008](../decisions/0008-single-request-audio-processing.md)):
 
-```text
-Audio upload
-  → AssemblyAITranscriber (STT-3.7: diarization + speaker ID + timestamps)
-  → PydanticAIAnalyzer (topics, verifiable claims, search queries, short explanations in interview language)
-  → TavilySearcher (concurrent httpx searches via asyncio.gather(..., return_exceptions=True))
-  → InMemoryInterviewRepository (store & return complete Interview)
+```mermaid
+flowchart LR
+    U["Audio Upload"] --> STT["AssemblyAI STT-3.7"]
+    STT --> LLM1["PydanticAI Call #1 (Summary, Topics, Claims, Queries)"]
+    LLM1 --> Search["Tavily SourceSearcher (asyncio.gather)"]
+    Search --> LLM2["PydanticAI Call #2 — Fail-Safe (Verdict + Grounded Explanation)"]
+    LLM2 --> Repo["InMemoryInterviewRepository"]
 ```
 
-Every URL returned to the client comes directly from `SourceSearcher` results; the LLM never constructs or copies URLs ([0006](../decisions/0006-tavily-for-external-source-search.md)).
+Every URL returned to the client comes directly from `SourceSearcher` results; Call #2 references retrieved snippets by ID (`[1]`, `[2]`), and Python attaches the real URLs so the LLM never constructs or copies links ([0006](../decisions/0006-tavily-for-external-source-search.md)).
 
-### 2. Manual Passage Marking (`POST /api/interviews/{id}/claims`)
+### 2. Manual Passage Marking & Batch Fact-Check (`POST /api/interviews/{id}/claims/check`)
 
-When a journalist marks a transcript passage as "to fact-check", the claim is saved immediately (`origin="journalist"`). The service then generates a short explanation and search query for that quote, retrieves real sources via `SourceSearcher`, and returns the enriched claim.
+The journalist can mark one or more transcript passages in the UI (via right-click context menu or mobile fallback) without waiting on network calls between marks. Clicking the **Check marked passages** action sends the pending passages in one batch request (`POST /api/interviews/{id}/claims/check`): all claims are persisted immediately (`origin="journalist"`), then run through the same Tavily search + fail-safe source-grounded verification step to attach a verdict (`supported`, `contradicted`, `needs_context`, or `unverified`), grounded explanation, and real sources.
+
+### 3. Audio Playback & Speaker Renaming
+
+- `GET /api/interviews/{id}/audio` streams the in-memory audio bytes with their original MIME type so the frontend playbar can play and seek through the interview.
+- `PATCH /api/interviews/{id}/speakers` accepts a speaker rename mapping (e.g., `{"Speaker A": "Jan Peeters"}`) and updates all matching `TranscriptSegment` and `Claim` records in memory.
 
 ## Endpoints
 
@@ -55,7 +63,9 @@ When a journalist marks a transcript passage as "to fact-check", the claim is sa
 | `GET /api/interviews` | List interviews in the current in-memory session | `200` |
 | `POST /api/interviews` | Upload audio file or stopped recording; returns transcript, claims, and external sources | `201`, `400`, `413`, `415`, `502` |
 | `GET /api/interviews/{id}` | Retrieve an existing interview by ID | `200`, `404` |
-| `POST /api/interviews/{id}/claims` | Mark a transcript passage for fact-checking and retrieve supporting sources | `201`, `404`, `422` |
+| `GET /api/interviews/{id}/audio` | Serve stored audio bytes for the transcript playbar | `200`, `404` |
+| `PATCH /api/interviews/{id}/speakers` | Rename one or more speakers across segments and claims | `200`, `404`, `422` |
+| `POST /api/interviews/{id}/claims/check` | Persist and fact-check a batch of journalist-marked passages | `201`, `404`, `422` |
 | `DELETE /api/interviews/{id}/claims/{claim_id}` | Remove or dismiss a claim | `204`, `404` |
 
 ## Validation, Timeouts & Graceful Degradation
@@ -64,7 +74,7 @@ When a journalist marks a transcript passage as "to fact-check", the claim is sa
 - **Timeouts:** Configure generous end-to-end timeouts (120s on frontend `fetch`, Vite dev proxy, and backend `httpx` clients) to accommodate single-request STT + LLM + search runs.
 - **Graceful degradation:**
   - In `POST /api/interviews`, once transcription succeeds, the interview is preserved even if one or more Tavily searches fail (`asyncio.gather(..., return_exceptions=True)`), returning a `warnings` list rather than discarding a completed transcript.
-  - In `POST /api/interviews/{id}/claims`, the journalist's marked passage is always persisted first; if enrichment or search fails, the endpoint still returns `201` with the saved claim and a warning.
+  - In `POST /api/interviews/{id}/claims/check`, all journalist-marked passages are persisted first; if enrichment or search fails for any item, the endpoint still returns `201` with the saved claims and warnings.
 - **Consistent error responses:** Domain and upstream exceptions are caught by centralized FastAPI exception handlers and returned as structured JSON (`404` for unknown IDs, `502` when transcription fails) without exposing raw stack traces or vendor payloads.
 
 ## Testing Strategy

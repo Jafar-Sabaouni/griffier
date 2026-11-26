@@ -14,9 +14,12 @@ The full brief is in `project.md` (Dutch).
 
 ## Technical Decisions & Documentation
 
-Read the relevant docs before implementing or changing architecture, endpoints, or providers:
+Read the relevant docs before implementing or changing architecture, endpoints, UI, or providers:
 
+- **Project goals:** `documentation/goals.md` — product, UX, and craftsmanship goals.
+- **Diagrams:** `documentation/diagrams/` — Mermaid sequence diagrams for capture/analysis and batch passage fact-checking.
 - **API architecture:** `documentation/api/architecture.md` — 4-layer FastAPI structure (`api/`, `domain/`, `services/`, `adapters/`), REST endpoints, processing flows, validation, and error handling.
+- **UI design & theme:** `documentation/ui/design-brief.md` and `documentation/ui/theme-tokens.md` — monochrome editorial look, themeable CSS token system, landing view, synced playbar, right-click marking, and speaker renaming.
 - **Prototype scope:** `documentation/decisions/prototype-scope.md` — production features intentionally deferred (auth, persistent DB, live streaming/job queues, rate limiting/observability). Do not add them unless explicitly requested.
 - **Technical decisions:** `documentation/decisions/` (indexed in `documentation/decisions/README.md`). Follow `.agents/skills/technical-decisions/SKILL.md` whenever recording or superseding a decision:
 
