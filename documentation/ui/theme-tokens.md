@@ -1,6 +1,6 @@
 # UI Theme & Token System
 
-Griffier uses a relational CSS custom-property token system (`frontend/src/styles/tokens.css`) aligned with `.agents/skills/ui-design-core/SKILL.md`. Components consume only semantic tokens — never raw hex codes, Tailwind color utilities, or ad-hoc pixel values.
+Griffier uses **Tailwind CSS** ([0009](../decisions/0009-tailwind-css-for-ui-styling.md)) backed by a relational CSS custom-property token system (`frontend/src/styles/tokens.css`) aligned with `.agents/skills/ui-design-core/SKILL.md`. Components consume only semantic tokens mapped through Tailwind's `@theme` block — never raw hex codes, raw Tailwind palette utilities (`zinc-800`, `gray-500`), or ad-hoc pixel values.
 
 ## Default Theme: Monochrome Light
 

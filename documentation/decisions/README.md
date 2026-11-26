@@ -14,3 +14,4 @@ See `.agents/skills/technical-decisions/SKILL.md` for how to write and update th
 | [0006](./0006-tavily-for-external-source-search.md) | Use Tavily Behind SourceSearcher for External Source Search | Accepted | 2026-11-26 |
 | [0007](./0007-react-vite-router-frontend.md) | Use React, TypeScript, Vite, and React Router for the Frontend | Accepted | 2026-11-26 |
 | [0008](./0008-single-request-audio-processing.md) | Process Audio and Intelligence in a Single Request | Accepted | 2026-11-26 |
+| [0009](./0009-tailwind-css-for-ui-styling.md) | Use Tailwind CSS for UI Styling | Accepted | 2026-11-26 |
