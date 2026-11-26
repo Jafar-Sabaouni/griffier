@@ -57,15 +57,14 @@ npm run dev                               # check UI changes in the running app,
 
 ## Rules
 
-- Never commit to `main`. All work goes through stacked PRs.
-- Never merge PRs. The user reviews and merges.
-- One task at a time. Anything found outside the task becomes a new backlog task, not extra changes on the current branch.
+- **Human-in-the-loop Git/GitHub:** The agent works strictly locally (code, tests, docs, independent review) and never runs `gh` write commands, pushes branches, mutates Git history, or merges PRs. The user owns branches, commits, PRs, merges, and the project board.
+- One task at a time. Anything found outside the task becomes a follow-up backlog item, not extra changes in the current task.
 - Tests never call live speech-to-text, LLM or search APIs. Use PydanticAI `TestModel`/`FunctionModel` and fake `Transcriber`/`SourceSearcher` implementations.
 - External sources shown in the Intelligence panel must be real, retrieved results. Never let a model invent URLs or citations.
 - API keys come from environment variables. Never commit them.
 - Follow accepted decisions in `documentation/decisions/`; supersede the decision file (using the `technical-decisions` skill) before changing an accepted provider or architecture boundary.
 - Keep `documentation/` up to date as the project evolves: when a task adds or changes endpoints, data contracts, architecture, setup, or introduces a notable technical trade-off, update the relevant file in `documentation/` (or add a new decision record) as part of the same task.
-- Before committing or moving a task to `In review`, have a separate read-only reviewer subagent review the changes and return `APPROVE` (see `.agents/skills/workflow/SKILL.md`).
+- Before handing off any task, have a separate read-only reviewer subagent review the changes and return `APPROVE` (see `.agents/skills/workflow/SKILL.md`).
 
 ## Architecture Principles
 
@@ -84,7 +83,7 @@ Detailed, task-specific instructions live in `.agents/skills/`. Read a skill's `
 
 | Skill                     | Use when                                                                                                     |
 | ------------------------- | ------------------------------------------------------------------------------------------------------------ |
-| `workflow`                | Picking up or handing off a task, moving board cards, branches, commits, stacked PRs                         |
+| `workflow`                | Picking up, verifying, independently reviewing, and handing off a task (local-only agent workflow)           |
 | `technical-decisions`     | Recording or superseding architecture, model, provider, or trade-off decisions in `documentation/decisions/` |
 | `fastapi`                 | Building, structuring, or reviewing FastAPI routes, dependencies, and schemas                                |
 | `python-type-safety`      | Writing or reviewing typed Python (`Protocol`s, generics, `pyright` compliance)                              |
@@ -95,8 +94,9 @@ Detailed, task-specific instructions live in `.agents/skills/`. Read a skill's `
 | `ui-design-core`          | Designing UI, theming, tokens, spacing, typography                                                           |
 | `webapp-testing`          | Checking UI changes in the running app with Playwright: screenshots, DOM inspection, browser console logs    |
 
-## Commits and branches
+## Branches, Commits & Hand-Off
 
-- Branches: `<type>/p<phase>-<description>`, e.g. `feat/p1-audio-upload`. Types: `feat`, `bugs`, `refactor`, `chore`.
-- Commits: `<type>(<task ref>): <summary>`, e.g. `feat(p1): add transcription pipeline`.
+- **Ownership:** All Git mutations (branching, committing, pushing) and GitHub actions (PRs, merges, project board updates) are executed by the user after reviewing the agent's verified hand-off.
+- **Branch convention:** `<type>/p<phase>-<description>`, e.g. `feat/p1-audio-upload` (`feat`, `bugs`, `refactor`, `chore`).
+- **Commit convention:** `<type>(<phase>): <summary>`, e.g. `feat(p2): add transcription pipeline`.
 - The full workflow is in `.agents/skills/workflow/SKILL.md`.
