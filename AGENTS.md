@@ -61,6 +61,7 @@ npm run dev                               # check UI changes in the running app,
 - External sources shown in the Intelligence panel must be real, retrieved results. Never let a model invent URLs or citations.
 - API keys come from environment variables. Never commit them.
 - Follow accepted decisions in `documentation/decisions/`; supersede the decision file (using the `technical-decisions` skill) before changing an accepted provider or architecture boundary.
+- Keep `documentation/` up to date as the project evolves: when a task adds or changes endpoints, data contracts, architecture, setup, or introduces a notable technical trade-off, update the relevant file in `documentation/` (or add a new decision record) as part of the same task.
 - Before committing or moving a task to `In review`, have a separate read-only reviewer subagent review the changes and return `APPROVE` (see `.agents/skills/workflow/SKILL.md`).
 
 ## Architecture Principles

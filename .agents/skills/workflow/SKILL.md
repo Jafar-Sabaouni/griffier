@@ -94,6 +94,7 @@ Run the checks for every part of the stack the task touches. All must pass befor
   ```
 * Tests must never call live STT/LLM/search APIs: use PydanticAI `TestModel`/`FunctionModel` and fake `Transcriber`/`SourceSearcher` implementations.
 * UI changes: check them in the running app (`npm run dev`), including mobile width.
+* Documentation: if the task added or changed endpoints, data contracts, architecture, setup, or introduced a notable technical trade-off, update the relevant doc in `documentation/` (and `documentation/decisions/` using `technical-decisions` when applicable) before hand-off.
 
 Tick acceptance items only when they are met. Anything not met is written down in the task, never ticked.
 
@@ -104,7 +105,7 @@ Before committing or moving a task to `In review`, invoke a **separate, read-onl
 The reviewer must check:
 1. **Acceptance & scope:** Every ticked acceptance item is met; no unrelated out-of-scope edits.
 2. **Architecture & rules:** Compliance with `AGENTS.md` (especially the 8 Architecture Principles, protocol boundaries, no leaked vendor types, no live API calls in tests, no hardcoded secrets).
-3. **Technical decisions:** Alignment with accepted files in `documentation/decisions/`.
+3. **Technical decisions & documentation:** Alignment with accepted files in `documentation/decisions/`, and that `documentation/` was updated if the task changed contracts, flows, setup, or added a new decision.
 4. **Stack standards:** Adherence to the relevant skills (`fastapi`, `python-type-safety`, `async-python-patterns`, `python-testing-patterns`, `typescript-standards`, `react-architecture`, `ui-design-core`).
 5. **Correctness & tests:** Edge cases, error handling, and meaningful offline test coverage.
 
