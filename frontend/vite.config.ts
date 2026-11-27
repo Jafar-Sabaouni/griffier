@@ -1,6 +1,6 @@
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
-import { defineConfig } from "vitest/config";
+import { defineConfig } from "vite";
 
 const API_PROXY_TIMEOUT_MS = 120_000;
 
@@ -15,8 +15,5 @@ export default defineConfig({
         proxyTimeout: API_PROXY_TIMEOUT_MS,
       },
     },
-  },
-  test: {
-    passWithNoTests: true,
   },
 });

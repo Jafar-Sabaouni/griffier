@@ -12,7 +12,7 @@ Griffier's frontend is built with **React**, **TypeScript**, **Vite**, and **Rea
 With FastAPI already serving as the dedicated backend, a clean client-side React setup gives full flexibility:
 
 - **Clean and capable:** Vite with React Router covers routing, data loading, and SPA ergonomics cleanly without the framework ceremony or server-boundary complexity of full-stack meta-frameworks like Next.js.
-- **Proven ergonomics:** Fast dev server, straightforward TypeScript and Vitest setup, and direct familiarity reduce friction on an ~8-hour prototype.
+- **Proven ergonomics:** Fast dev server, straightforward strict TypeScript setup, and direct familiarity reduce friction on an ~8-hour prototype.
 - **Clear separation of concerns:** The frontend owns UI state, audio recording (`MediaRecorder`), and the split-screen workspace; Python/FastAPI owns all AI, transcription, and external API calls.
 
 ## Alternatives Considered

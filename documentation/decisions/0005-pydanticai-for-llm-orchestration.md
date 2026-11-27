@@ -19,7 +19,7 @@ LLM_API_KEY=
 Griffier needs reliable structured outputs (claims linked to transcript passages, verification explanations, and search queries) without locking the backend to a single LLM vendor or hosted endpoint. The choice for PydanticAI with explicit provider/base-URL configuration came from four reasons:
 
 - **Model- and endpoint-agnostic:** Separating `LLM_PROVIDER` (API protocol such as `anthropic`, `openai`, or `google`), `LLM_MODEL`, optional `LLM_BASE_URL`, and `LLM_API_KEY` lets Griffier target hosted APIs, Anthropic/OpenAI-compatible providers (such as DeepSeek or OpenRouter), or local models purely through `.env`.
-- **Validated structured outputs:** Output schemas are standard Pydantic models; if an LLM returns malformed data or fails validation, PydanticAI feeds the error back and retries automatically.
+- **Validated structured outputs:** Output schemas are standard Pydantic models wrapped in `PromptedOutput(...)` so structured JSON generation works reliably across both standard and thinking-mode models (such as `deepseek-flash` on DeepSeek's Anthropic-compatible endpoint, which rejects forced `tool_choice`). If an LLM returns malformed data or fails validation, PydanticAI feeds the error back and retries automatically.
 - **Language-aware prompts:** Structured prompts instruct the model to match the interview's language (Dutch or English) for claims, explanations, and search queries.
 - **Built-in offline testing:** `TestModel` and `FunctionModel` allow deterministic tests of prompts and schemas without making live LLM calls.
 
