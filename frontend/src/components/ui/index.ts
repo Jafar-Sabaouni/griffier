@@ -22,6 +22,9 @@ export type {
   ContextMenuProps,
 } from "./ContextMenu";
 
+export { DragDropWrapper } from "./DragDropWrapper";
+export type { DragDropWrapperProps } from "./DragDropWrapper";
+
 export { Input, InputSizes } from "./Input";
 export type { InputProps, InputSize } from "./Input";
 
