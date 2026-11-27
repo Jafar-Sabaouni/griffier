@@ -1,5 +1,7 @@
+import json
+
 import pytest
-from pydantic_ai import ModelMessage, ModelResponse, ToolCallPart
+from pydantic_ai import ModelMessage, ModelResponse, TextPart
 from pydantic_ai.models.anthropic import AnthropicModel
 from pydantic_ai.models.function import AgentInfo, FunctionModel
 from pydantic_ai.models.google import GoogleModel
@@ -44,10 +46,8 @@ def _build_segments() -> list[TranscriptSegment]:
     ]
 
 
-def _tool_response(agent_info: AgentInfo, payload: dict[str, object]) -> ModelResponse:
-    assert agent_info.output_tools, "Expected structured output tool."
-    tool_name = agent_info.output_tools[0].name
-    return ModelResponse(parts=[ToolCallPart(tool_name=tool_name, args=payload)])
+def _json_response(payload: dict[str, object]) -> ModelResponse:
+    return ModelResponse(parts=[TextPart(content=json.dumps(payload))])
 
 
 def test_model_factory_builds_supported_providers() -> None:
@@ -97,21 +97,23 @@ def test_model_factory_rejects_invalid_configuration() -> None:
 async def test_extract_interview_analysis_returns_structured_output_with_test_model() -> None:
     # Arrange
     model = TestModel(
-        custom_output_args={
-            "summary": "Interview over inflatiecijfers.",
-            "topics": [
-                {"topic": "Inflatie", "search_query": "inflatie Belgie CBS vorig jaar"},
-            ],
-            "claims": [
-                {
-                    "segment_id": "seg-2",
-                    "quote": "De inflatie daalde vorig jaar met 2 procent.",
-                    "speaker": "Interviewee",
-                    "reason": "Specifiek macro-economisch cijfer dat verifieerbaar is.",
-                    "search_query": "inflatie daling 2 procent vorig jaar officiele cijfers",
-                }
-            ],
-        }
+        custom_output_text=json.dumps(
+            {
+                "summary": "Interview over inflatiecijfers.",
+                "topics": [
+                    {"topic": "Inflatie", "search_query": "inflatie Belgie CBS vorig jaar"},
+                ],
+                "claims": [
+                    {
+                        "segment_id": "seg-2",
+                        "quote": "De inflatie daalde vorig jaar met 2 procent.",
+                        "speaker": "Interviewee",
+                        "reason": "Specifiek macro-economisch cijfer dat verifieerbaar is.",
+                        "search_query": "inflatie daling 2 procent vorig jaar officiele cijfers",
+                    }
+                ],
+            }
+        )
     )
     analyzer: IntelligenceAnalyzer = PydanticAIAnalyzer(model=model)
 
@@ -132,9 +134,9 @@ async def test_generate_marked_queries_passes_passage_context_and_preserves_clai
     captured_prompts: list[str] = []
 
     def respond(messages: list[ModelMessage], agent_info: AgentInfo) -> ModelResponse:
+        assert not agent_info.output_tools
         captured_prompts.append(str(messages))
-        return _tool_response(
-            agent_info,
+        return _json_response(
             {
                 "items": [
                     {
@@ -145,7 +147,7 @@ async def test_generate_marked_queries_passes_passage_context_and_preserves_clai
                         "search_query": "officiele inflatiecijfers vorig jaar",
                     }
                 ]
-            },
+            }
         )
 
     analyzer = PydanticAIAnalyzer(model=FunctionModel(respond))
@@ -176,9 +178,9 @@ async def test_verify_claims_against_sources_omits_raw_urls_and_filters_invalid_
     captured_prompts: list[str] = []
 
     def respond(messages: list[ModelMessage], agent_info: AgentInfo) -> ModelResponse:
+        assert not agent_info.output_tools
         captured_prompts.append(str(messages))
-        return _tool_response(
-            agent_info,
+        return _json_response(
             {
                 "items": [
                     {
@@ -188,7 +190,7 @@ async def test_verify_claims_against_sources_omits_raw_urls_and_filters_invalid_
                         "source_ids": [1, 99],
                     }
                 ]
-            },
+            }
         )
 
     analyzer = PydanticAIAnalyzer(model=FunctionModel(respond))
