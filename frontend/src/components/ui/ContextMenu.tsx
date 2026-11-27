@@ -20,6 +20,33 @@ export interface ContextMenuProps {
   readonly ariaLabel?: string;
 }
 
+const VIEWPORT_PADDING_PX = 8;
+const MENU_ESTIMATED_WIDTH_PX = 192;
+const MENU_ITEM_HEIGHT_PX = 40;
+const MENU_VERTICAL_PADDING_PX = 16;
+
+function clampPosition(
+  position: ContextMenuPosition,
+  itemCount: number,
+): ContextMenuPosition {
+  if (typeof window === "undefined") {
+    return position;
+  }
+  const estimatedHeight = itemCount * MENU_ITEM_HEIGHT_PX + MENU_VERTICAL_PADDING_PX;
+  const maxX = Math.max(
+    VIEWPORT_PADDING_PX,
+    window.innerWidth - MENU_ESTIMATED_WIDTH_PX - VIEWPORT_PADDING_PX,
+  );
+  const maxY = Math.max(
+    VIEWPORT_PADDING_PX,
+    window.innerHeight - estimatedHeight - VIEWPORT_PADDING_PX,
+  );
+  return {
+    x: Math.min(Math.max(VIEWPORT_PADDING_PX, position.x), maxX),
+    y: Math.min(Math.max(VIEWPORT_PADDING_PX, position.y), maxY),
+  };
+}
+
 export function ContextMenu({
   open,
   position,
@@ -58,12 +85,14 @@ export function ContextMenu({
     return null;
   }
 
+  const clamped = clampPosition(position, items.length);
+
   return (
     <div
       ref={menuRef}
       role="menu"
       aria-label={ariaLabel}
-      style={{ left: position.x, top: position.y }}
+      style={{ left: clamped.x, top: clamped.y }}
       className="fixed z-50 min-w-44 rounded-md border border-border-subtle bg-surface-canvas p-1 shadow-floating"
     >
       {items.map((item) => (

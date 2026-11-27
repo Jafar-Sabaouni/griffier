@@ -58,9 +58,8 @@ export function CaptureLanding() {
 
     try {
       const interview = await createInterview(file);
-      const localAudioUrl = URL.createObjectURL(file);
       void navigate(`/interviews/${interview.id}`, {
-        state: { interview, localAudioUrl },
+        state: { interview, localAudioFile: file },
       });
     } catch (err: unknown) {
       setIsSubmitting(false);

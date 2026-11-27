@@ -48,7 +48,22 @@ async function fetchWithTimeout(
   timeoutMs: number = API_TIMEOUT_MS,
 ): Promise<Response> {
   const controller = new AbortController();
+  const externalSignal = init.signal;
+  const handleExternalAbort = () => controller.abort();
+
+  if (externalSignal) {
+    if (externalSignal.aborted) {
+      controller.abort();
+    } else {
+      externalSignal.addEventListener("abort", handleExternalAbort, {
+        once: true,
+      });
+    }
+  }
+
+  let didTimeout = false;
   const timeoutId = setTimeout(() => {
+    didTimeout = true;
     controller.abort();
   }, timeoutMs);
 
@@ -59,11 +74,14 @@ async function fetchWithTimeout(
     });
   } catch (error: unknown) {
     if (error instanceof DOMException && error.name === "AbortError") {
-      throw new ApiError("Request timed out while waiting for the server.", {
-        status: 408,
-        code: "request_timeout",
-        isTimeout: true,
-      });
+      if (didTimeout) {
+        throw new ApiError("Request timed out while waiting for the server.", {
+          status: 408,
+          code: "request_timeout",
+          isTimeout: true,
+        });
+      }
+      throw error;
     }
     const message = error instanceof Error ? error.message : "Network request failed.";
     throw new ApiError(message, {
@@ -72,6 +90,7 @@ async function fetchWithTimeout(
     });
   } finally {
     clearTimeout(timeoutId);
+    externalSignal?.removeEventListener("abort", handleExternalAbort);
   }
 }
 
@@ -112,10 +131,13 @@ export function createInterview(
   });
 }
 
-export function getInterview(interviewId: string): Promise<Interview> {
+export function getInterview(
+  interviewId: string,
+  options?: { readonly signal?: AbortSignal },
+): Promise<Interview> {
   return requestJson<Interview>(
     `${INTERVIEWS_BASE_PATH}/${encodeURIComponent(interviewId)}`,
-    { method: "GET" },
+    { method: "GET", signal: options?.signal },
   );
 }
 

@@ -28,5 +28,8 @@ export type { DragDropWrapperProps } from "./DragDropWrapper";
 export { Input, InputSizes } from "./Input";
 export type { InputProps, InputSize } from "./Input";
 
+export { Modal } from "./Modal";
+export type { ModalProps } from "./Modal";
+
 export { Skeleton, SkeletonVariants } from "./Skeleton";
 export type { SkeletonProps, SkeletonVariant } from "./Skeleton";
