@@ -37,6 +37,7 @@ Black, white, and neutral grays keep the interface calm and legible, while isola
   --mark-journalist-bg: #dedede;
   --mark-journalist-border: #111111;
   --status-danger: #991b1b;
+  --status-danger-bg: #fef2f2;
 
   /* Base-4 spacing scale */
   --space-1: 4px;
@@ -46,10 +47,13 @@ Black, white, and neutral grays keep the interface calm and legible, while isola
   --space-6: 24px;
   --space-8: 32px;
 
-  /* Concentric radii (R_inner = max(0, R_outer - P_inset)) */
+  /* Concentric base-4 radii (R_inner = max(0, R_outer - P_inset)) */
+  --radius-xs: 4px;
   --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 14px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-2xl: 24px;
   --radius-pill: 9999px;
 
   /* Matching control heights */
@@ -61,6 +65,9 @@ Black, white, and neutral grays keep the interface calm and legible, while isola
   --font-body: "Inter", system-ui, -apple-system, sans-serif;
   --font-heading: "Inter", system-ui, -apple-system, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* Floating layers only */
+  --shadow-floating: 0 8px 24px rgba(17, 17, 17, 0.08), 0 2px 6px rgba(17, 17, 17, 0.04);
 }
 ```
 
