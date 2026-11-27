@@ -101,6 +101,7 @@ Automated tests cover the backend pipeline, API routes, and provider adapters; f
 
 ## Documentation
 
+- [System Architecture](documentation/architecture.md) — end-to-end overview of frontend, backend, provider boundaries, and data flow
 - [Project Goals](documentation/goals.md) — product, UX, and engineering goals
 - [API Architecture](documentation/api/architecture.md) — 4-layer backend structure, REST endpoints, and error handling
 - [Sequence Diagrams](documentation/diagrams/) — [capture & analysis](documentation/diagrams/capture-and-analysis.md) and [passage marking & batch check](documentation/diagrams/passage-marking-and-check.md)
