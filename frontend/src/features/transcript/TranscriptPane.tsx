@@ -1,28 +1,99 @@
-import { ArrowDown } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
-import type { MouseEvent } from "react";
+import { ArrowDown, BookmarkPlus, CheckCheck } from "lucide-react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import type { MouseEvent, RefObject } from "react";
 
 import {
   Button,
   ButtonShapes,
   ButtonSizes,
   ButtonVariants,
+  ContextMenu,
 } from "../../components/ui";
-import type { ContextMenuPosition } from "../../components/ui";
+import type { ContextMenuItem, ContextMenuPosition } from "../../components/ui";
 import type { Interview } from "../../types/interview";
 import { AudioPlaybar } from "./AudioPlaybar";
+import { HighlightedSegmentText } from "./HighlightedSegmentText";
 import { formatTimestampMs } from "./formatTime";
+import {
+  readSelectionInContainer,
+  readSelectionInElement,
+} from "./highlights";
+import type { PendingMark, SegmentSelection } from "./highlights";
 import { useTranscriptPlayback } from "./useTranscriptPlayback";
+
+function areSelectionsEqual(
+  a: SegmentSelection | null,
+  b: SegmentSelection | null,
+): boolean {
+  if (a === b) {
+    return true;
+  }
+  if (!a || !b) {
+    return false;
+  }
+  return (
+    a.segmentId === b.segmentId &&
+    a.startOffset === b.startOffset &&
+    a.endOffset === b.endOffset &&
+    a.quote === b.quote
+  );
+}
+
+function useContainerSelection(
+  containerRef: RefObject<HTMLElement | null>,
+): SegmentSelection | null {
+  const cacheRef = useRef<SegmentSelection | null>(null);
+
+  const subscribe = (listener: () => void) => {
+    document.addEventListener("selectionchange", listener);
+    return () => {
+      document.removeEventListener("selectionchange", listener);
+    };
+  };
+
+  const getSnapshot = (): SegmentSelection | null => {
+    const next = readSelectionInContainer(containerRef.current);
+    if (!areSelectionsEqual(cacheRef.current, next)) {
+      cacheRef.current = next;
+    }
+    return cacheRef.current;
+  };
+
+  return useSyncExternalStore(subscribe, getSnapshot, () => null);
+}
+
+const PassageMenuKinds = {
+  MARK: "mark",
+  UNMARK: "unmark",
+} as const;
+
+type PassageMenuState =
+  | {
+      readonly kind: typeof PassageMenuKinds.MARK;
+      readonly selection: SegmentSelection;
+      readonly position: ContextMenuPosition;
+    }
+  | {
+      readonly kind: typeof PassageMenuKinds.UNMARK;
+      readonly markId: string;
+      readonly position: ContextMenuPosition;
+    };
 
 export interface TranscriptPaneProps {
   readonly interview: Interview;
   readonly audioUrl: string | null;
   readonly audioLoading: boolean;
   readonly audioUnavailable: boolean;
+  readonly pendingMarks: readonly PendingMark[];
+  readonly isCheckingMarks: boolean;
+  readonly checkMarksError: string | null;
   readonly onSpeakerContextMenu: (
     speaker: string,
     position: ContextMenuPosition,
   ) => void;
+  readonly onAddPendingMark: (selection: SegmentSelection) => void;
+  readonly onRemovePendingMark: (markId: string) => void;
+  readonly onCheckPendingMarks: () => void;
 }
 
 export function TranscriptPane({
@@ -30,10 +101,19 @@ export function TranscriptPane({
   audioUrl,
   audioLoading,
   audioUnavailable,
+  pendingMarks,
+  isCheckingMarks,
+  checkMarksError,
   onSpeakerContextMenu,
+  onAddPendingMark,
+  onRemovePendingMark,
+  onCheckPendingMarks,
 }: TranscriptPaneProps) {
   const [isAutoFollowPaused, setIsAutoFollowPaused] = useState(false);
+  const [passageMenu, setPassageMenu] = useState<PassageMenuState | null>(null);
+  const transcriptContainerRef = useRef<HTMLDivElement>(null);
   const segmentRefs = useRef<Map<string, HTMLLIElement>>(new Map());
+  const activeSelection = useContainerSelection(transcriptContainerRef);
 
   const {
     audioRef,
@@ -77,8 +157,61 @@ export function TranscriptPane({
     speaker: string,
   ) => {
     event.preventDefault();
+    setPassageMenu(null);
     onSpeakerContextMenu(speaker, { x: event.clientX, y: event.clientY });
   };
+
+  const commitMark = (selection: SegmentSelection) => {
+    onAddPendingMark(selection);
+    window.getSelection()?.removeAllRanges();
+  };
+
+  const handleSegmentContextMenu = (
+    event: MouseEvent<HTMLParagraphElement>,
+    segmentId: string,
+  ) => {
+    const selection = readSelectionInElement(event.currentTarget, segmentId);
+    if (!selection) {
+      return;
+    }
+    event.preventDefault();
+    setPassageMenu({
+      kind: PassageMenuKinds.MARK,
+      selection,
+      position: { x: event.clientX, y: event.clientY },
+    });
+  };
+
+  const handlePendingMarkContextMenu = (
+    event: MouseEvent<HTMLElement>,
+    markId: string,
+  ) => {
+    setPassageMenu({
+      kind: PassageMenuKinds.UNMARK,
+      markId,
+      position: { x: event.clientX, y: event.clientY },
+    });
+  };
+
+  const passageMenuItems: readonly ContextMenuItem[] = passageMenu
+    ? passageMenu.kind === PassageMenuKinds.MARK
+      ? [
+          {
+            id: "mark-passage",
+            label: "Mark to fact-check",
+            disabled: isCheckingMarks,
+            onSelect: () => commitMark(passageMenu.selection),
+          },
+        ]
+      : [
+          {
+            id: "unmark-passage",
+            label: "Remove mark",
+            disabled: isCheckingMarks,
+            onSelect: () => onRemovePendingMark(passageMenu.markId),
+          },
+        ]
+    : [];
 
   return (
     <section
@@ -105,6 +238,7 @@ export function TranscriptPane({
       </header>
 
       <div
+        ref={transcriptContainerRef}
         onWheel={handleManualScrollIntent}
         onTouchMove={handleManualScrollIntent}
         className="min-h-0 flex-1 overflow-y-auto py-4 pr-1"
@@ -151,16 +285,21 @@ export function TranscriptPane({
                       {formatTimestampMs(segment.start_ms)}
                     </button>
                   </div>
-                  <p
-                    className={[
-                      "text-sm leading-relaxed transition-colors duration-200",
-                      isActive
-                        ? "text-transcript-active"
-                        : "text-transcript-inactive",
-                    ].join(" ")}
-                  >
-                    {segment.text}
-                  </p>
+                  <HighlightedSegmentText
+                    segment={segment}
+                    claims={interview.claims}
+                    pendingMarks={pendingMarks}
+                    isActive={isActive}
+                    onContextMenu={(event) =>
+                      handleSegmentContextMenu(event, segment.id)
+                    }
+                    onPendingMarkClick={(markId) => {
+                      if (!isCheckingMarks) {
+                        onRemovePendingMark(markId);
+                      }
+                    }}
+                    onPendingMarkContextMenu={handlePendingMarkContextMenu}
+                  />
                 </li>
               );
             })}
@@ -183,6 +322,54 @@ export function TranscriptPane({
         </div>
       )}
 
+      {(activeSelection || pendingMarks.length > 0 || checkMarksError) && (
+        <div className="flex flex-col gap-2 border-t border-border-subtle pt-3">
+          {checkMarksError && (
+            <p
+              role="alert"
+              className="rounded-md bg-status-danger-bg px-3 py-2 text-xs text-status-danger"
+            >
+              {checkMarksError}
+            </p>
+          )}
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              {activeSelection && (
+                <Button
+                  variant={ButtonVariants.SECONDARY}
+                  size={ButtonSizes.SM}
+                  onMouseDown={(event) => event.preventDefault()}
+                  onClick={() => commitMark(activeSelection)}
+                  disabled={isCheckingMarks}
+                >
+                  <BookmarkPlus className="h-3.5 w-3.5" aria-hidden="true" />
+                  Mark to fact-check
+                </Button>
+              )}
+              {pendingMarks.length > 0 && !activeSelection && (
+                <span className="text-xs text-text-muted">
+                  Click any marked passage to remove it
+                </span>
+              )}
+            </div>
+
+            {pendingMarks.length > 0 && (
+              <Button
+                variant={ButtonVariants.PRIMARY}
+                size={ButtonSizes.SM}
+                onClick={onCheckPendingMarks}
+                disabled={isCheckingMarks}
+              >
+                <CheckCheck className="h-3.5 w-3.5" aria-hidden="true" />
+                {isCheckingMarks
+                  ? "Checking passages..."
+                  : `Check marked passages (${pendingMarks.length})`}
+              </Button>
+            )}
+          </div>
+        </div>
+      )}
+
       <div className="pt-3">
         <AudioPlaybar
           currentTimeMs={currentTimeMs}
@@ -196,6 +383,14 @@ export function TranscriptPane({
           onSeek={seekTo}
         />
       </div>
+
+      <ContextMenu
+        open={passageMenu !== null}
+        position={passageMenu?.position ?? { x: 0, y: 0 }}
+        ariaLabel="Passage actions"
+        onClose={() => setPassageMenu(null)}
+        items={passageMenuItems}
+      />
     </section>
   );
 }

@@ -2,7 +2,11 @@ import { ArrowLeft } from "lucide-react";
 import { useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router";
 
-import { ApiError, renameSpeakers } from "../api/interviews";
+import {
+  ApiError,
+  checkMarkedPassages,
+  renameSpeakers,
+} from "../api/interviews";
 import {
   Badge,
   BadgeVariants,
@@ -15,8 +19,12 @@ import type { ContextMenuPosition } from "../components/ui";
 import { ProcessingSkeleton } from "../features/capture/ProcessingSkeleton";
 import { RenameSpeakerModal } from "../features/transcript/RenameSpeakerModal";
 import { SpeakersSidebar } from "../features/transcript/SpeakersSidebar";
-import { deriveSpeakerSummaries } from "../features/transcript/speakers";
 import { TranscriptPane } from "../features/transcript/TranscriptPane";
+import type {
+  PendingMark,
+  SegmentSelection,
+} from "../features/transcript/highlights";
+import { deriveSpeakerSummaries } from "../features/transcript/speakers";
 import {
   ResourceStatuses,
   useInterviewResource,
@@ -52,17 +60,128 @@ export function InterviewWorkspacePage() {
   const [renamingSpeaker, setRenamingSpeaker] = useState<string | null>(null);
   const [isRenaming, setIsRenaming] = useState(false);
   const [renameError, setRenameError] = useState<string | null>(null);
+  const [pendingMarks, setPendingMarks] = useState<readonly PendingMark[]>([]);
+  const [checkingInterviewId, setCheckingInterviewId] = useState<string | null>(
+    null,
+  );
+  const [checkMarksError, setCheckMarksError] = useState<{
+    readonly interviewId: string;
+    readonly message: string;
+  } | null>(null);
 
   const interview =
     updatedInterview && updatedInterview.id === id
       ? updatedInterview
       : resource.interview;
 
+  const activePendingMarks = interview
+    ? pendingMarks.filter((mark) => mark.interviewId === interview.id)
+    : [];
+  const isCheckingMarks =
+    interview !== null && checkingInterviewId === interview.id;
+  const activeCheckMarksError =
+    interview !== null && checkMarksError?.interviewId === interview.id
+      ? checkMarksError.message
+      : null;
+
   const handleOpenSpeakerMenu = (
     speaker: string,
     position: ContextMenuPosition,
   ) => {
     setSpeakerMenu({ speaker, position });
+  };
+
+  const handleAddPendingMark = (selection: SegmentSelection) => {
+    if (!interview) {
+      return;
+    }
+    setCheckMarksError((prev) =>
+      prev?.interviewId === interview.id ? null : prev,
+    );
+    setPendingMarks((prev) => {
+      const exists = prev.some(
+        (item) =>
+          item.interviewId === interview.id &&
+          item.segmentId === selection.segmentId &&
+          item.startOffset === selection.startOffset &&
+          item.endOffset === selection.endOffset,
+      );
+      if (exists) {
+        return prev;
+      }
+      return [
+        ...prev,
+        {
+          id: crypto.randomUUID(),
+          interviewId: interview.id,
+          segmentId: selection.segmentId,
+          quote: selection.quote,
+          startOffset: selection.startOffset,
+          endOffset: selection.endOffset,
+        },
+      ];
+    });
+  };
+
+  const handleRemovePendingMark = (markId: string) => {
+    if (interview) {
+      setCheckMarksError((prev) =>
+        prev?.interviewId === interview.id ? null : prev,
+      );
+    }
+    setPendingMarks((prev) => prev.filter((item) => item.id !== markId));
+  };
+
+  const handleCheckPendingMarks = async () => {
+    if (!interview || activePendingMarks.length === 0 || isCheckingMarks) {
+      return;
+    }
+    const targetInterview = interview;
+    const targetInterviewId = interview.id;
+    setCheckMarksError((prev) =>
+      prev?.interviewId === targetInterviewId ? null : prev,
+    );
+    setCheckingInterviewId(targetInterviewId);
+    const submittedIds = new Set(activePendingMarks.map((mark) => mark.id));
+    try {
+      const response = await checkMarkedPassages(
+        targetInterviewId,
+        activePendingMarks.map((mark) => ({
+          segment_id: mark.segmentId,
+          quote: mark.quote,
+          start_offset: mark.startOffset,
+          end_offset: mark.endOffset,
+        })),
+      );
+      setUpdatedInterview((prev) => {
+        const base =
+          prev && prev.id === targetInterviewId ? prev : targetInterview;
+        const existingClaimIds = new Set(base.claims.map((claim) => claim.id));
+        const newClaims = response.claims.filter(
+          (claim) => !existingClaimIds.has(claim.id),
+        );
+        return {
+          ...base,
+          claims: [...base.claims, ...newClaims],
+          warnings: [...base.warnings, ...response.warnings],
+        };
+      });
+      setPendingMarks((prev) =>
+        prev.filter((item) => !submittedIds.has(item.id)),
+      );
+    } catch (err: unknown) {
+      setCheckMarksError({
+        interviewId: targetInterviewId,
+        message:
+          err instanceof ApiError
+            ? err.message
+            : "Failed to fact-check marked passages.",
+      });
+    } finally {
+      setCheckingInterviewId((prev) =>
+        prev === targetInterviewId ? null : prev,
+      );
+    }
   };
 
   const handleRenameSpeaker = async (oldName: string, newName: string) => {
@@ -159,7 +278,15 @@ export function InterviewWorkspacePage() {
             audioUrl={resource.audioUrl}
             audioLoading={resource.audioLoading}
             audioUnavailable={resource.audioUnavailable}
+            pendingMarks={activePendingMarks}
+            isCheckingMarks={isCheckingMarks}
+            checkMarksError={activeCheckMarksError}
             onSpeakerContextMenu={handleOpenSpeakerMenu}
+            onAddPendingMark={handleAddPendingMark}
+            onRemovePendingMark={handleRemovePendingMark}
+            onCheckPendingMarks={() => {
+              void handleCheckPendingMarks();
+            }}
           />
 
           <section
