@@ -3,7 +3,7 @@ from collections import OrderedDict
 from griffier.domain.errors import AudioNotFoundError
 from griffier.domain.models import AudioAsset
 
-DEFAULT_MAX_AUDIO_BYTES = 100 * 1024 * 1024
+DEFAULT_MAX_AUDIO_BYTES = 300 * 1024 * 1024
 
 
 class InMemoryAudioStore:
