@@ -1,6 +1,6 @@
-import { ArrowDown, BookmarkPlus, CheckCheck } from "lucide-react";
-import { useEffect, useRef, useState, useSyncExternalStore } from "react";
-import type { MouseEvent, RefObject } from "react";
+import { ArrowDown } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import type { MouseEvent } from "react";
 
 import {
   Button,
@@ -13,54 +13,12 @@ import type { ContextMenuItem, ContextMenuPosition } from "../../components/ui";
 import type { Interview } from "../../types/interview";
 import { AudioPlaybar } from "./AudioPlaybar";
 import { HighlightedSegmentText } from "./HighlightedSegmentText";
+import { PendingMarksBar } from "./PendingMarksBar";
 import { formatTimestampMs } from "./formatTime";
-import {
-  readSelectionInContainer,
-  readSelectionInElement,
-} from "./highlights";
+import { readSelectionInElement } from "./highlights";
 import type { PendingMark, SegmentSelection } from "./highlights";
+import { useContainerSelection } from "./useContainerSelection";
 import { useTranscriptPlayback } from "./useTranscriptPlayback";
-
-function areSelectionsEqual(
-  a: SegmentSelection | null,
-  b: SegmentSelection | null,
-): boolean {
-  if (a === b) {
-    return true;
-  }
-  if (!a || !b) {
-    return false;
-  }
-  return (
-    a.segmentId === b.segmentId &&
-    a.startOffset === b.startOffset &&
-    a.endOffset === b.endOffset &&
-    a.quote === b.quote
-  );
-}
-
-function useContainerSelection(
-  containerRef: RefObject<HTMLElement | null>,
-): SegmentSelection | null {
-  const cacheRef = useRef<SegmentSelection | null>(null);
-
-  const subscribe = (listener: () => void) => {
-    document.addEventListener("selectionchange", listener);
-    return () => {
-      document.removeEventListener("selectionchange", listener);
-    };
-  };
-
-  const getSnapshot = (): SegmentSelection | null => {
-    const next = readSelectionInContainer(containerRef.current);
-    if (!areSelectionsEqual(cacheRef.current, next)) {
-      cacheRef.current = next;
-    }
-    return cacheRef.current;
-  };
-
-  return useSyncExternalStore(subscribe, getSnapshot, () => null);
-}
 
 const PassageMenuKinds = {
   MARK: "mark",
@@ -360,53 +318,14 @@ export function TranscriptPane({
         </div>
       )}
 
-      {(activeSelection || pendingMarks.length > 0 || checkMarksError) && (
-        <div className="flex flex-col gap-2 border-t border-border-subtle pt-3">
-          {checkMarksError && (
-            <p
-              role="alert"
-              className="rounded-md bg-status-danger-bg px-3 py-2 text-xs text-status-danger"
-            >
-              {checkMarksError}
-            </p>
-          )}
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
-              {activeSelection && (
-                <Button
-                  variant={ButtonVariants.SECONDARY}
-                  size={ButtonSizes.SM}
-                  onMouseDown={(event) => event.preventDefault()}
-                  onClick={() => commitMark(activeSelection)}
-                  disabled={isCheckingMarks}
-                >
-                  <BookmarkPlus className="h-3.5 w-3.5" aria-hidden="true" />
-                  Mark to fact-check
-                </Button>
-              )}
-              {pendingMarks.length > 0 && !activeSelection && (
-                <span className="text-xs text-text-muted">
-                  Click any marked passage to remove it
-                </span>
-              )}
-            </div>
-
-            {pendingMarks.length > 0 && (
-              <Button
-                variant={ButtonVariants.PRIMARY}
-                size={ButtonSizes.SM}
-                onClick={onCheckPendingMarks}
-                disabled={isCheckingMarks}
-              >
-                <CheckCheck className="h-3.5 w-3.5" aria-hidden="true" />
-                {isCheckingMarks
-                  ? "Checking passages..."
-                  : `Check marked passages (${pendingMarks.length})`}
-              </Button>
-            )}
-          </div>
-        </div>
-      )}
+      <PendingMarksBar
+        activeSelection={activeSelection}
+        pendingCount={pendingMarks.length}
+        isChecking={isCheckingMarks}
+        error={checkMarksError}
+        onMarkSelection={commitMark}
+        onCheckPending={onCheckPendingMarks}
+      />
 
       <div className="pt-3">
         <AudioPlaybar
