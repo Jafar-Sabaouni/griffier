@@ -9,7 +9,7 @@ The full brief is in `project.md` (Dutch).
 
 ## Stack
 
-- **Backend:** Python (`uv`), FastAPI, PydanticAI (configured via `LLM_PROVIDER`, `LLM_MODEL`, `LLM_BASE_URL`, `LLM_API_KEY`), AssemblyAI `STT-3.7` (batch), Tavily REST (`httpx`), in-memory storage. Every external dependency sits behind a Python `Protocol` boundary (`Transcriber`, `IntelligenceAnalyzer`, `SourceSearcher`, `InterviewRepository`).
+- **Backend:** Python (`uv`), FastAPI, PydanticAI (configured via `LLM_PROVIDER`, `LLM_MODEL`, `LLM_BASE_URL`, `LLM_API_KEY`), AssemblyAI `STT-3.7` (`assemblyai` SDK), Tavily REST (`httpx`), in-memory storage (with bounded LRU audio cache). Every external dependency sits behind a Python `Protocol` boundary (`Transcriber`, `IntelligenceAnalyzer`, `SourceSearcher`, `InterviewRepository`, `AudioStore`).
 - **Frontend:** Vite + React + TypeScript (strict) + React Router + Tailwind CSS (semantic theme tokens).
 
 ## Technical Decisions & Documentation

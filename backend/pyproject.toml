@@ -4,6 +4,7 @@ version = "0.1.0"
 description = "Griffier backend API for interview transcription, claim extraction, and source-grounded fact-checking."
 requires-python = ">=3.12"
 dependencies = [
+    "assemblyai>=1.10.11",
     "fastapi>=0.115.0",
     "httpx>=0.28.0",
     "pydantic>=2.10.0",

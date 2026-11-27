@@ -5,7 +5,7 @@
 
 ## Decision
 
-Griffier uses **AssemblyAI `STT-3.7`** (batch API) with speaker diarization and speaker identification, wrapped behind a `Transcriber` protocol. Both uploaded audio files and browser recordings (sent when recording stops) go through this same path for v1.
+Griffier uses **AssemblyAI `STT-3.7`** (batch API via the official `assemblyai` Python SDK) with speaker diarization (`speaker_labels: true`), automatic language detection, and role-based speaker identification, wrapped behind a `Transcriber` protocol. The synchronous SDK call runs via `asyncio.to_thread` with per-instance `Client`/`Settings` (no global state) so FastAPI stays non-blocking. Both uploaded audio files and browser recordings (sent when recording stops) go through this same path for v1.
 
 ## Why
 
