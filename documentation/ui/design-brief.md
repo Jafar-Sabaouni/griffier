@@ -17,17 +17,21 @@ Visual direction and interaction design for Griffier, following `.agents/skills/
 - Directly underneath, one focused control bar:
   - Primary **Start recording** pill button (black fill, white text).
   - Round **Upload audio** icon button directly beside it (matching control height).
-- **While recording:** The control bar transitions cleanly to a live recording state (pulsing indicator, elapsed timer, **Stop** button).
-- **On file selection or stop:** Immediately submits to `POST /api/interviews` and transitions to the workspace view showing a split-screen loading skeleton while transcription and intelligence run.
+- **While recording:** The control bar transitions cleanly to a live recording state (live audio waveform bars, elapsed timer, **Stop** button). Dragging an audio file anywhere onto the viewport opens a full-viewport drop overlay.
+- **On file selection or stop:** Immediately submits to `POST /api/interviews` and transitions to the workspace view showing a 3-column loading skeleton matching the final workspace chrome while transcription and intelligence run.
 
 ### 2. Workspace View (`/interviews/:id`)
 
-Two-column split-screen layout on desktop (stacked/tabbed on mobile):
+Three-column desktop layout (`Speakers` sidebar + `Transcript` pane + `Intelligence` pane), stacking cleanly on mobile widths, with aligned panel headers and a shared top breadcrumb bar (`← Griffier / {title}`):
 
-#### Left Pane — Transcript & Audio Playbar (Coupled Unit)
+#### Left Sidebar — Speakers
+- Lists all detected speakers (supports any number of speakers) with segment counts and a direct edit (pencil) button opening the reusable `RenameSpeakerModal` (`PATCH /api/interviews/{id}/speakers`).
+- Renaming a speaker to an existing speaker name prompts a merge confirmation step before submitting.
+
+#### Middle Pane — Transcript & Audio Playbar (Coupled Unit)
 The transcript list and bottom audio playbar share one playback state (`currentTimeMs`, `isPlaying`, `seekTo`) and operate as a single synchronized feature:
 
-- **Header:** Interview title/timestamp and compact speaker chips. Clicking a speaker name opens an inline rename input (`PATCH /api/interviews/{id}/speakers`) that updates every segment and claim for that speaker.
+- **Header:** `Transcript` label and interview date, aligned with sibling island headers. Right-clicking any speaker name in the transcript opens a context menu with **Rename** triggering the same `RenameSpeakerModal`.
 - **Transcript list ↔ Playbar sync:** Scrollable list of speaker-attributed `TranscriptSegment` rows with timestamps:
   - **Playbar → Transcript (text-color transition only):** `activeSegmentId` is derived directly from `currentTimeMs` against each segment's `[start_ms, end_ms]`. Inactive transcript text uses a softer dark gray (`--text-transcript-inactive`), and the currently spoken segment shifts to crisp black (`--text-transcript-active`) while scrolling smoothly into view — no heavy background fill. Manual scrolling pauses auto-scroll so the UI never fights the user while reading or highlighting (with a quick re-follow cue).
   - **Transcript → Playbar:** Clicking a segment's timestamp seeks audio playback directly to `start_ms`.
@@ -49,5 +53,5 @@ The transcript list and bottom audio playbar share one playback state (`currentT
   - Quoted passage from the transcript.
   - Short AI explanation grounded in the retrieved Tavily snippets (referencing them as `[1]`, `[2]`) followed by the real clickable source links.
   - Dismiss button (`DELETE /api/interviews/{id}/claims/{claim_id}`) removes both the card and its transcript highlight.
-  - Clicking a claim scrolls to and seeks/highlights the corresponding passage in the left transcript pane.
+  - Clicking a claim scrolls to and seeks/highlights the corresponding passage in the transcript pane.
 - **Warnings banner:** If partial source lookups or verification failed during processing, a restrained banner explains what could not be fetched without hiding the transcript or completed claims.

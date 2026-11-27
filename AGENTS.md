@@ -50,8 +50,6 @@ Frontend:
 
 ```bash
 npm run lint
-npm test -- --run
-npm test -- --run path/to/file.test.tsx   # single file
 npm run build
 npm run dev                               # check UI changes in the running app, including mobile width
 ```

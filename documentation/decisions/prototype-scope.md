@@ -23,3 +23,8 @@ Several production concerns are intentionally left out of the prototype. These a
 
 - **Why deferred:** Local single-user execution does not face abusive traffic or multi-tenant API spend, so basic input validation and structured error responses are sufficient for the prototype.
 - **What production requires:** Per-user upload and request rate limits, spend/token caps across STT, LLM, and search APIs, and structured logging/tracing across provider calls.
+
+## 5. Frontend Automated Tests
+
+- **Why deferred:** For a small prototype, automated testing effort is focused on the backend pipeline, API contracts, source-grounding invariants, and provider adapters (offline `pytest` suite). Frontend correctness is enforced via strict TypeScript (`tsc -b`, zero `any`), ESLint, and visual/interactive verification across desktop and mobile viewports.
+- **What production requires:** Component/unit tests (e.g., Vitest + Testing Library) for highlight offset resolution and complex UI flows, plus end-to-end browser tests (Playwright) covering recording, marking, and fact-check verification.

@@ -21,7 +21,7 @@ Black, white, and neutral grays keep the interface calm and legible, while isola
   --text-secondary: #525252;
   --text-muted: #737373;
   --text-inverse: #ffffff;
-  --text-transcript-inactive: #666666; /* Spoken text when not currently playing */
+  --text-transcript-inactive: #737373; /* Spoken text when not currently playing */
   --text-transcript-active: #111111;   /* Spoken text while currently playing */
 
   /* Functional borders & focus */
