@@ -2,7 +2,7 @@ from collections.abc import Sequence
 from xml.sax.saxutils import escape, quoteattr
 
 from pydantic import BaseModel, Field
-from pydantic_ai import Agent
+from pydantic_ai import Agent, PromptedOutput
 from pydantic_ai.models import Model
 
 from griffier.domain.errors import UpstreamProviderError
@@ -150,17 +150,17 @@ class PydanticAIAnalyzer:
     def __init__(self, model: Model) -> None:
         self._analysis_agent: Agent[None, InterviewAnalysis] = Agent(
             model=model,
-            output_type=InterviewAnalysis,
+            output_type=PromptedOutput(InterviewAnalysis),
             instructions=_ANALYSIS_INSTRUCTIONS,
         )
         self._marked_query_agent: Agent[None, _MarkedPassageQueryBatch] = Agent(
             model=model,
-            output_type=_MarkedPassageQueryBatch,
+            output_type=PromptedOutput(_MarkedPassageQueryBatch),
             instructions=_MARKED_QUERY_INSTRUCTIONS,
         )
         self._verification_agent: Agent[None, _ClaimVerificationBatch] = Agent(
             model=model,
-            output_type=_ClaimVerificationBatch,
+            output_type=PromptedOutput(_ClaimVerificationBatch),
             instructions=_VERIFICATION_INSTRUCTIONS,
         )
 
