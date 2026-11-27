@@ -15,7 +15,7 @@ backend/src/griffier/
 ```
 
 - **`api/`** handles HTTP concerns only: multipart upload validation, status codes, dependency injection, and mapping domain errors to JSON responses.
-- **`domain/`** defines Griffier's own data models (`Interview`, `TranscriptSegment`, `Claim`, `ExternalSource`) and `Protocol` interfaces (`Transcriber`, `IntelligenceAnalyzer`, `SourceSearcher`, `InterviewRepository`) with zero external provider imports.
+- **`domain/`** defines Griffier's own data models (`Interview`, `TranscriptSegment`, `Claim`, `ExternalSource`, `AudioAsset`) and `Protocol` interfaces (`Transcriber`, `IntelligenceAnalyzer`, `SourceSearcher`, `InterviewRepository`, `AudioStore`) with zero external provider imports.
 - **`services/`** coordinates end-to-end flows (`process_audio`, `mark_passage`, `remove_claim`) against protocols so business logic stays independent of vendors and HTTP.
 - **`adapters/`** translates vendor payloads into Griffier domain models at the edge, ensuring no vendor-specific types leak inward.
 - **`dependencies.py`** wires concrete adapters from `config.py` in one place, allowing providers to be swapped or faked cleanly.
@@ -52,7 +52,7 @@ The journalist can mark one or more transcript passages in the UI (via right-cli
 
 ### 3. Audio Playback & Speaker Renaming
 
-- `GET /api/interviews/{id}/audio` streams the in-memory audio bytes with their original MIME type so the frontend playbar can play and seek through the interview.
+- `GET /api/interviews/{id}/audio` returns the audio bytes stored in `AudioStore` (backed by a bounded in-memory LRU cache in the prototype) with their original MIME type so the frontend playbar can play and seek through the interview. If an older interview's audio was evicted from the LRU cache, the endpoint returns `404` while the transcript, claims, and sources remain available.
 - `PATCH /api/interviews/{id}/speakers` accepts a speaker rename mapping (e.g., `{"Speaker A": "Jan Peeters"}`) and updates all matching `TranscriptSegment` and `Claim` records in memory.
 
 ## Endpoints

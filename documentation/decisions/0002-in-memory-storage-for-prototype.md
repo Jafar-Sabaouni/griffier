@@ -5,7 +5,7 @@
 
 ## Decision
 
-Griffier stores interviews, transcripts, marked passages, and fact-check results in memory, hidden behind an `InterviewRepository` protocol. No database or file-based persistence is included in the prototype.
+Griffier stores interviews, transcripts, marked passages, and fact-check results in memory behind an `InterviewRepository` protocol, and stores raw audio separately behind an `AudioStore` protocol backed by a bounded in-memory LRU cache (default 300 MB cap). No database or file-based persistence is included in the prototype.
 
 ## Why
 

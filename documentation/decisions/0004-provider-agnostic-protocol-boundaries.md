@@ -5,7 +5,7 @@
 
 ## Decision
 
-Every external dependency in Griffier — speech-to-text (`Transcriber`), LLM analysis (`IntelligenceAnalyzer`), web search (`SourceSearcher`), and persistence (`InterviewRepository`) — sits behind a small Python `Protocol` that speaks only Griffier's own domain models. Concrete adapters are wired in a single composition root driven by environment configuration.
+Every external dependency in Griffier — speech-to-text (`Transcriber`), LLM analysis (`IntelligenceAnalyzer`), web search (`SourceSearcher`), interview persistence (`InterviewRepository`), and audio blob storage (`AudioStore`) — sits behind a small Python `Protocol` that speaks only Griffier's own domain models. Concrete adapters are wired in a single composition root driven by environment configuration.
 
 ## Why
 
