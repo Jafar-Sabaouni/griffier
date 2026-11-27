@@ -85,13 +85,13 @@ export function ProcessingSkeleton({
             </header>
 
             <div className="min-h-0 flex-1 overflow-hidden py-4 pr-1">
-              <ol className="flex flex-col gap-5">
+              <ol className="flex flex-col gap-6">
                 {Array.from({ length: 5 }, (_, index) => (
                   <li key={index} className="flex flex-col gap-2">
                     <div className="flex items-center gap-2">
                       <Skeleton
                         variant={SkeletonVariants.LINE}
-                        className="h-3.5 max-w-24"
+                        className="h-4 max-w-28"
                       />
                       <Skeleton
                         variant={SkeletonVariants.LINE}
@@ -100,11 +100,11 @@ export function ProcessingSkeleton({
                     </div>
                     <Skeleton
                       variant={SkeletonVariants.LINE}
-                      className="h-3.5"
+                      className="h-5"
                     />
                     <Skeleton
                       variant={SkeletonVariants.LINE}
-                      className="h-3.5 max-w-[80%]"
+                      className="h-5 max-w-[80%]"
                     />
                   </li>
                 ))}

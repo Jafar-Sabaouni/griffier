@@ -57,7 +57,7 @@ export function HighlightedSegmentText({
       data-segment-id={segment.id}
       onContextMenu={onContextMenu}
       className={[
-        "text-sm leading-relaxed transition-colors duration-200",
+        "text-lg font-medium leading-relaxed transition-colors duration-200",
         isActive ? "text-transcript-active" : "text-transcript-inactive",
         hasSegmentFallbackAi
           ? isFallbackFocused

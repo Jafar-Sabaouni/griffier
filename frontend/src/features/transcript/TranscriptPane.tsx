@@ -282,7 +282,7 @@ export function TranscriptPane({
             No transcript segments were returned for this audio.
           </p>
         ) : (
-          <ol className="flex flex-col gap-5">
+          <ol className="flex flex-col gap-6">
             {interview.segments.map((segment) => {
               const isActive = segment.id === activeSegmentId;
               return (
@@ -295,7 +295,7 @@ export function TranscriptPane({
                       segmentRefs.current.delete(segment.id);
                     }
                   }}
-                  className="flex flex-col gap-1"
+                  className="flex flex-col gap-1.5"
                 >
                   <div className="flex items-center gap-2">
                     <span
@@ -303,7 +303,7 @@ export function TranscriptPane({
                         handleSpeakerRightClick(event, segment.speaker)
                       }
                       title="Right-click to rename speaker"
-                      className="cursor-context-menu text-xs font-semibold text-text-primary"
+                      className="cursor-context-menu text-sm font-semibold text-text-primary"
                     >
                       {segment.speaker}
                     </span>
