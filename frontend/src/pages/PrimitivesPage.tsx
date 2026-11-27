@@ -17,6 +17,7 @@ import {
   ContextMenu,
   Input,
   InputSizes,
+  Modal,
   Skeleton,
   SkeletonVariants,
 } from "../components/ui";
@@ -30,6 +31,7 @@ export function PrimitivesPage() {
     y: 0,
   });
   const [lastAction, setLastAction] = useState<string>("None yet");
+  const [modalOpen, setModalOpen] = useState(false);
   const [micStream, setMicStream] = useState<MediaStream | null>(null);
   const [micError, setMicError] = useState<string | null>(null);
   const micStreamRef = useRef<MediaStream | null>(null);
@@ -277,6 +279,57 @@ export function PrimitivesPage() {
                 onSelect: () => setLastAction("Copy quote"),
               },
             ]}
+          />
+        </section>
+
+        <section className="flex flex-col gap-4">
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-text-muted">
+            Modal
+          </h2>
+          <Card surface={CardSurfaces.SUBTLE} padding={CardPaddings.MD}>
+            <div className="flex items-center justify-between gap-4">
+              <p className="text-sm text-text-secondary">
+                Fixed header with dynamic body and footer slots.
+              </p>
+              <Button
+                variant={ButtonVariants.SECONDARY}
+                size={ButtonSizes.SM}
+                onClick={() => setModalOpen(true)}
+              >
+                Open modal
+              </Button>
+            </div>
+          </Card>
+          <Modal
+            open={modalOpen}
+            title="Rename speaker"
+            subtitle="Example modal with dynamic body and footer elements."
+            onClose={() => setModalOpen(false)}
+            body={
+              <Input
+                size={InputSizes.MD}
+                defaultValue="Speaker C"
+                aria-label="Example speaker name"
+              />
+            }
+            footer={
+              <>
+                <Button
+                  variant={ButtonVariants.SECONDARY}
+                  size={ButtonSizes.SM}
+                  onClick={() => setModalOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant={ButtonVariants.PRIMARY}
+                  size={ButtonSizes.SM}
+                  onClick={() => setModalOpen(false)}
+                >
+                  Save name
+                </Button>
+              </>
+            }
           />
         </section>
 
