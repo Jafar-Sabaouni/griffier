@@ -9,7 +9,7 @@ backend/src/griffier/
 ├── api/            # Thin FastAPI routers, HTTP schemas, exception handlers
 ├── domain/         # Pure Pydantic models (Interview, TranscriptSegment, Claim, ExternalSource) + Protocols
 ├── services/       # Use-case orchestration talking exclusively to Protocols
-├── adapters/       # Concrete providers (AssemblyAI SDK, PydanticAI, Tavily, InMemoryRepository, InMemoryAudioStore)
+├── adapters/       # Concrete providers (AssemblyAI SDK, PydanticAI, Tavily SDK, InMemoryRepository, InMemoryAudioStore)
 ├── config.py       # Typed environment settings (pydantic-settings)
 └── dependencies.py # Single composition root wiring adapters via FastAPI Depends
 ```

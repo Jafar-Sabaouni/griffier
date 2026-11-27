@@ -9,7 +9,7 @@ The full brief is in `project.md` (Dutch).
 
 ## Stack
 
-- **Backend:** Python (`uv`), FastAPI, PydanticAI (configured via `LLM_PROVIDER`, `LLM_MODEL`, `LLM_BASE_URL`, `LLM_API_KEY`), AssemblyAI `STT-3.7` (`assemblyai` SDK), Tavily REST (`httpx`), in-memory storage (with bounded LRU audio cache). Every external dependency sits behind a Python `Protocol` boundary (`Transcriber`, `IntelligenceAnalyzer`, `SourceSearcher`, `InterviewRepository`, `AudioStore`).
+- **Backend:** Python (`uv`), FastAPI, PydanticAI (configured via `LLM_PROVIDER`, `LLM_MODEL`, `LLM_BASE_URL`, `LLM_API_KEY`), AssemblyAI `STT-3.7` (`assemblyai` SDK), Tavily (`tavily-python` SDK), in-memory storage (with bounded LRU audio cache). Every external dependency sits behind a Python `Protocol` boundary (`Transcriber`, `IntelligenceAnalyzer`, `SourceSearcher`, `InterviewRepository`, `AudioStore`).
 - **Frontend:** Vite + React + TypeScript (strict) + React Router + Tailwind CSS (semantic theme tokens).
 
 ## Technical Decisions & Documentation
@@ -28,7 +28,7 @@ Read the relevant docs before implementing or changing architecture, endpoints, 
   - `0003` Backend API: FastAPI
   - `0004` Decoupling: Provider-agnostic Python `Protocol` boundaries
   - `0005` LLM layer: PydanticAI with explicit 4-variable `.env` configuration
-  - `0006` External sources: Tavily REST API via `httpx` behind `SourceSearcher`
+  - `0006` External sources: Tavily (`tavily-python` SDK) behind `SourceSearcher`
   - `0007` Frontend: React, TypeScript, Vite, and React Router
   - `0008` Processing flow: Single-request audio upload/recording → transcript + intelligence (with loading skeleton)
   - `0009` Styling: Tailwind CSS bound to semantic CSS theme tokens (`@theme` + `[data-theme]`)
