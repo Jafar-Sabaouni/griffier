@@ -32,11 +32,22 @@ class Claim(BaseModel):
 
 
 class ExtractedClaim(BaseModel):
-    segment_id: str
-    quote: str
-    speaker: str
-    reason: str
-    search_query: str
+    segment_id: str = Field(
+        description="Exact segment id copied verbatim from the <segment id='...'> attribute."
+    )
+    quote: str = Field(
+        description="Verbatim substring from that segment containing the verifiable factual claim."
+    )
+    speaker: str = Field(description="Exact speaker label copied verbatim from the segment.")
+    reason: str = Field(
+        description="One concise sentence explaining what factual assertion needs verification."
+    )
+    search_query: str = Field(
+        description=(
+            "Concise, self-contained web search query (3-8 keywords) resolving pronouns "
+            "and relative dates into concrete entities, locations, and years."
+        )
+    )
 
 
 class MarkedPassage(BaseModel):
@@ -48,15 +59,40 @@ class MarkedPassage(BaseModel):
 
 
 class MarkedPassageQuery(BaseModel):
-    claim_id: str
-    segment_id: str
-    quote: str
-    reason: str
-    search_query: str
+    claim_id: str = Field(description="Exact claim_id copied verbatim from the <passage> input.")
+    segment_id: str = Field(
+        description="Exact segment_id copied verbatim from the <passage> input."
+    )
+    quote: str = Field(description="Exact quote copied verbatim from the <passage> input.")
+    reason: str = Field(
+        description="One concise sentence explaining the verifiable factual angle to check."
+    )
+    search_query: str = Field(
+        description=(
+            "Concise, self-contained web search query using <context> to resolve pronouns, "
+            "entities, and dates."
+        )
+    )
 
 
 class ClaimVerification(BaseModel):
-    claim_id: str
-    verdict: ClaimVerdict
-    explanation: str
-    source_ids: list[int] = Field(default_factory=list[int])
+    claim_id: str = Field(description="Exact claim_id copied verbatim from the <claim> input.")
+    explanation: str = Field(
+        description=(
+            "1-3 neutral sentences grounded strictly in <sources>, citing sources only by "
+            "bracketed index like [1] or [2] with no raw URLs."
+        )
+    )
+    source_ids: list[int] = Field(
+        default_factory=list[int],
+        description=(
+            "Exact integer IDs of sources cited in explanation; must be empty when "
+            "verdict is 'unverified'."
+        ),
+    )
+    verdict: ClaimVerdict = Field(
+        description=(
+            "Final verdict based solely on <sources>: 'supported', 'contradicted', "
+            "'needs_context', or 'unverified'."
+        )
+    )

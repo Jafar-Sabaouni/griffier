@@ -17,11 +17,27 @@ class Interview(BaseModel):
 
 
 class TopicQuery(BaseModel):
-    topic: str
-    search_query: str
+    topic: str = Field(description="Short 2-5 word topic label in the interview's language.")
+    search_query: str = Field(
+        description=(
+            "Concise, self-contained web search query (3-8 keywords) with concrete entities, "
+            "locations, or years."
+        )
+    )
 
 
 class InterviewAnalysis(BaseModel):
-    summary: str
-    topics: list[TopicQuery] = Field(default_factory=list[TopicQuery])
-    claims: list[ExtractedClaim] = Field(default_factory=list[ExtractedClaim])
+    summary: str = Field(
+        description="2-4 sentence neutral summary of the interview in its primary language."
+    )
+    topics: list[TopicQuery] = Field(
+        default_factory=list[TopicQuery],
+        description="2-5 distinct key topics discussed (empty if no substantive topics appear).",
+    )
+    claims: list[ExtractedClaim] = Field(
+        default_factory=list[ExtractedClaim],
+        description=(
+            "Prioritized list of concrete, check-worthy factual claims (empty if none exist; "
+            "exclude opinions, predictions, questions, and greetings)."
+        ),
+    )
