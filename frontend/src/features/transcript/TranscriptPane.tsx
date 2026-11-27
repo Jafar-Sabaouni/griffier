@@ -79,6 +79,11 @@ type PassageMenuState =
       readonly position: ContextMenuPosition;
     };
 
+export interface TranscriptFocusRequest {
+  readonly segmentId: string;
+  readonly seq: number;
+}
+
 export interface TranscriptPaneProps {
   readonly interview: Interview;
   readonly audioUrl: string | null;
@@ -87,10 +92,13 @@ export interface TranscriptPaneProps {
   readonly pendingMarks: readonly PendingMark[];
   readonly isCheckingMarks: boolean;
   readonly checkMarksError: string | null;
+  readonly focusedClaimId: string | null;
+  readonly focusRequest: TranscriptFocusRequest | null;
   readonly onSpeakerContextMenu: (
     speaker: string,
     position: ContextMenuPosition,
   ) => void;
+  readonly onClaimHighlightClick: (claimId: string, segmentId: string) => void;
   readonly onAddPendingMark: (selection: SegmentSelection) => void;
   readonly onRemovePendingMark: (markId: string) => void;
   readonly onCheckPendingMarks: () => void;
@@ -104,7 +112,10 @@ export function TranscriptPane({
   pendingMarks,
   isCheckingMarks,
   checkMarksError,
+  focusedClaimId,
+  focusRequest,
   onSpeakerContextMenu,
+  onClaimHighlightClick,
   onAddPendingMark,
   onRemovePendingMark,
   onCheckPendingMarks,
@@ -128,6 +139,29 @@ export function TranscriptPane({
   } = useTranscriptPlayback(interview.segments);
 
   const isPlaybarUnavailable = audioUnavailable || hasAudioError;
+  const seekToRef = useRef(seekTo);
+  const segmentsRef = useRef(interview.segments);
+  useEffect(() => {
+    seekToRef.current = seekTo;
+    segmentsRef.current = interview.segments;
+  }, [seekTo, interview.segments]);
+
+  const focusSegmentId = focusRequest?.segmentId ?? null;
+  const focusSeq = focusRequest?.seq ?? 0;
+
+  useEffect(() => {
+    if (!focusSegmentId || focusSeq === 0) {
+      return;
+    }
+    const element = segmentRefs.current.get(focusSegmentId);
+    element?.scrollIntoView({ behavior: "smooth", block: "center" });
+    const targetSegment = segmentsRef.current.find(
+      (segment) => segment.id === focusSegmentId,
+    );
+    if (targetSegment) {
+      seekToRef.current(targetSegment.start_ms);
+    }
+  }, [focusSegmentId, focusSeq]);
 
   useEffect(() => {
     if (!isPlaying || isAutoFollowPaused || !activeSegmentId) {
@@ -290,8 +324,12 @@ export function TranscriptPane({
                     claims={interview.claims}
                     pendingMarks={pendingMarks}
                     isActive={isActive}
+                    focusedClaimId={focusedClaimId}
                     onContextMenu={(event) =>
                       handleSegmentContextMenu(event, segment.id)
+                    }
+                    onClaimHighlightClick={(claimId) =>
+                      onClaimHighlightClick(claimId, segment.id)
                     }
                     onPendingMarkClick={(markId) => {
                       if (!isCheckingMarks) {
