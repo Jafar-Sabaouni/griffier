@@ -79,6 +79,22 @@ wheels = [
 ]
 
 [[package]]
+name = "assemblyai"
+version = "1.10.11"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "httpx" },
+    { name = "pydantic" },
+    { name = "pydantic-settings", marker = "python_full_version >= '3.14'" },
+    { name = "typing-extensions" },
+    { name = "websockets" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/58/d0/262686da336618947072b56151faed3ed75d88a1b3aedd966f82f34b9b10/assemblyai-1.10.11.tar.gz", hash = "sha256:f522354b68208811686e7280d867b715d53904387281ad456212fb687e8592da", size = 213902, upload-time = "2026-11-17T01:41:08.467Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/c0/b8/d4fdeee2dd3f1b7a0ed5a2c79f796a07312facf2378c4d8755843733dcee/assemblyai-1.10.11-py3-none-any.whl", hash = "sha256:0762f197a7209aa4e474f3f7c4416addc89ca953362ed535a2d7319b8d2be7fb", size = 208991, upload-time = "2026-11-17T01:41:06.844Z" },
+]
+
+[[package]]
 name = "attrs"
 version = "26.1.0"
 source = { registry = "https://pypi.org/simple" }
@@ -637,6 +653,7 @@ name = "griffier"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
+    { name = "assemblyai" },
     { name = "fastapi" },
     { name = "httpx" },
     { name = "pydantic" },
@@ -655,6 +672,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "assemblyai", specifier = ">=1.10.11" },
     { name = "fastapi", specifier = ">=0.115.0" },
     { name = "httpx", specifier = ">=0.28.0" },
     { name = "pydantic", specifier = ">=2.10.0" },

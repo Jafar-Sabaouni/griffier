@@ -9,7 +9,7 @@ backend/src/griffier/
 ├── api/            # Thin FastAPI routers, HTTP schemas, exception handlers
 ├── domain/         # Pure Pydantic models (Interview, TranscriptSegment, Claim, ExternalSource) + Protocols
 ├── services/       # Use-case orchestration talking exclusively to Protocols
-├── adapters/       # Concrete providers (AssemblyAI, PydanticAI, Tavily, InMemoryRepository)
+├── adapters/       # Concrete providers (AssemblyAI SDK, PydanticAI, Tavily, InMemoryRepository, InMemoryAudioStore)
 ├── config.py       # Typed environment settings (pydantic-settings)
 └── dependencies.py # Single composition root wiring adapters via FastAPI Depends
 ```
@@ -79,6 +79,6 @@ The journalist can mark one or more transcript passages in the UI (via right-cli
 
 ## Testing Strategy
 
-- Integration tests exercise the full HTTP layer using FastAPI's `TestClient` / `httpx.AsyncClient` with `app.dependency_overrides` injecting fake `Transcriber`, `SourceSearcher`, and `InterviewRepository` implementations.
-- LLM orchestration tests use PydanticAI's `TestModel` and `FunctionModel`.
+- Integration tests exercise the full HTTP layer using FastAPI's `TestClient` / `httpx.AsyncClient` with `app.dependency_overrides` injecting fake `Transcriber`, `SourceSearcher`, `InterviewRepository`, and `AudioStore` implementations.
+- Adapter unit tests run offline using `httpx.MockTransport` (including behind the `assemblyai` SDK client) and PydanticAI's `TestModel` / `FunctionModel`.
 - Automated tests never call live external APIs.
