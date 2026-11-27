@@ -5,6 +5,7 @@ import { Link, useLocation, useNavigate, useParams } from "react-router";
 import {
   ApiError,
   checkMarkedPassages,
+  deleteClaim,
   renameSpeakers,
 } from "../api/interviews";
 import {
@@ -17,6 +18,7 @@ import {
 } from "../components/ui";
 import type { ContextMenuPosition } from "../components/ui";
 import { ProcessingSkeleton } from "../features/capture/ProcessingSkeleton";
+import { IntelligencePane } from "../features/intelligence/IntelligencePane";
 import { RenameSpeakerModal } from "../features/transcript/RenameSpeakerModal";
 import { SpeakersSidebar } from "../features/transcript/SpeakersSidebar";
 import { TranscriptPane } from "../features/transcript/TranscriptPane";
@@ -29,7 +31,22 @@ import {
   ResourceStatuses,
   useInterviewResource,
 } from "../hooks/useInterviewResource";
-import type { Interview } from "../types/interview";
+import type { Claim, Interview } from "../types/interview";
+
+const FocusSources = {
+  TRANSCRIPT: "transcript",
+  INTELLIGENCE: "intelligence",
+} as const;
+
+type FocusSource = (typeof FocusSources)[keyof typeof FocusSources];
+
+interface FocusTarget {
+  readonly interviewId: string;
+  readonly claimId: string;
+  readonly segmentId: string;
+  readonly source: FocusSource;
+  readonly seq: number;
+}
 
 interface WorkspaceLocationState {
   readonly interview?: Interview;
@@ -68,6 +85,14 @@ export function InterviewWorkspacePage() {
     readonly interviewId: string;
     readonly message: string;
   } | null>(null);
+  const [focusedTarget, setFocusedTarget] = useState<FocusTarget | null>(null);
+  const [dismissingClaimIds, setDismissingClaimIds] = useState<
+    ReadonlySet<string>
+  >(() => new Set());
+  const [dismissError, setDismissError] = useState<{
+    readonly interviewId: string;
+    readonly message: string;
+  } | null>(null);
 
   const interview =
     updatedInterview && updatedInterview.id === id
@@ -83,6 +108,22 @@ export function InterviewWorkspacePage() {
     interview !== null && checkMarksError?.interviewId === interview.id
       ? checkMarksError.message
       : null;
+  const activeDismissError =
+    interview !== null && dismissError?.interviewId === interview.id
+      ? dismissError.message
+      : null;
+  const activeFocus =
+    interview !== null && focusedTarget?.interviewId === interview.id
+      ? focusedTarget
+      : null;
+  const transcriptFocusRequest =
+    activeFocus && activeFocus.source === FocusSources.INTELLIGENCE
+      ? { segmentId: activeFocus.segmentId, seq: activeFocus.seq }
+      : null;
+  const intelligenceScrollSeq =
+    activeFocus && activeFocus.source === FocusSources.TRANSCRIPT
+      ? activeFocus.seq
+      : 0;
 
   const handleOpenSpeakerMenu = (
     speaker: string,
@@ -184,6 +225,80 @@ export function InterviewWorkspacePage() {
     }
   };
 
+  const handleFocusClaimFromIntelligence = (claim: Claim) => {
+    if (!interview) {
+      return;
+    }
+    setFocusedTarget((prev) => ({
+      interviewId: interview.id,
+      claimId: claim.id,
+      segmentId: claim.segment_id,
+      source: FocusSources.INTELLIGENCE,
+      seq: (prev?.seq ?? 0) + 1,
+    }));
+  };
+
+  const handleFocusClaimFromTranscript = (
+    claimId: string,
+    segmentId: string,
+  ) => {
+    if (!interview) {
+      return;
+    }
+    setFocusedTarget((prev) => ({
+      interviewId: interview.id,
+      claimId,
+      segmentId,
+      source: FocusSources.TRANSCRIPT,
+      seq: (prev?.seq ?? 0) + 1,
+    }));
+  };
+
+  const handleDismissClaim = async (claimId: string) => {
+    if (!interview || dismissingClaimIds.has(claimId)) {
+      return;
+    }
+    const targetInterview = interview;
+    const targetInterviewId = interview.id;
+    setDismissError((prev) =>
+      prev?.interviewId === targetInterviewId ? null : prev,
+    );
+    setDismissingClaimIds((prev) => {
+      const next = new Set(prev);
+      next.add(claimId);
+      return next;
+    });
+    try {
+      await deleteClaim(targetInterviewId, claimId);
+      setUpdatedInterview((prev) => {
+        const base =
+          prev && prev.id === targetInterviewId ? prev : targetInterview;
+        return {
+          ...base,
+          claims: base.claims.filter((claim) => claim.id !== claimId),
+        };
+      });
+      setFocusedTarget((prev) =>
+        prev?.claimId === claimId ? null : prev,
+      );
+    } catch (err: unknown) {
+      setDismissError({
+        interviewId: targetInterviewId,
+        message:
+          err instanceof ApiError ? err.message : "Failed to dismiss claim.",
+      });
+    } finally {
+      setDismissingClaimIds((prev) => {
+        if (!prev.has(claimId)) {
+          return prev;
+        }
+        const next = new Set(prev);
+        next.delete(claimId);
+        return next;
+      });
+    }
+  };
+
   const handleRenameSpeaker = async (oldName: string, newName: string) => {
     if (!interview) {
       return;
@@ -281,7 +396,10 @@ export function InterviewWorkspacePage() {
             pendingMarks={activePendingMarks}
             isCheckingMarks={isCheckingMarks}
             checkMarksError={activeCheckMarksError}
+            focusedClaimId={activeFocus?.claimId ?? null}
+            focusRequest={transcriptFocusRequest}
             onSpeakerContextMenu={handleOpenSpeakerMenu}
+            onClaimHighlightClick={handleFocusClaimFromTranscript}
             onAddPendingMark={handleAddPendingMark}
             onRemovePendingMark={handleRemovePendingMark}
             onCheckPendingMarks={() => {
@@ -289,25 +407,17 @@ export function InterviewWorkspacePage() {
             }}
           />
 
-          <section
-            aria-label="Intelligence"
-            className="flex min-h-0 flex-col gap-4 overflow-y-auto rounded-2xl bg-surface-subtle p-4"
-          >
-            <header className="flex h-7 items-center justify-between gap-3 border-b border-border-subtle pb-3">
-              <h2 className="text-xs font-semibold uppercase tracking-wider text-text-muted">
-                Intelligence
-              </h2>
-            </header>
-            {interview.summary && (
-              <p className="text-sm leading-relaxed text-text-primary">
-                {interview.summary}
-              </p>
-            )}
-            <p className="text-xs text-text-secondary">
-              {interview.sources.length} external sources ·{" "}
-              {interview.claims.length} claims ready for review.
-            </p>
-          </section>
+          <IntelligencePane
+            interview={interview}
+            focusedClaimId={activeFocus?.claimId ?? null}
+            scrollToFocusedSeq={intelligenceScrollSeq}
+            dismissingClaimIds={dismissingClaimIds}
+            dismissError={activeDismissError}
+            onFocusClaim={handleFocusClaimFromIntelligence}
+            onDismissClaim={(claimId) => {
+              void handleDismissClaim(claimId);
+            }}
+          />
         </div>
       </main>
 

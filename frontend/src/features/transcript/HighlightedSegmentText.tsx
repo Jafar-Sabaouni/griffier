@@ -9,7 +9,9 @@ export interface HighlightedSegmentTextProps {
   readonly claims: readonly Claim[];
   readonly pendingMarks: readonly PendingMark[];
   readonly isActive: boolean;
+  readonly focusedClaimId: string | null;
   readonly onContextMenu: (event: MouseEvent<HTMLParagraphElement>) => void;
+  readonly onClaimHighlightClick: (claimId: string) => void;
   readonly onPendingMarkClick: (markId: string) => void;
   readonly onPendingMarkContextMenu: (
     event: MouseEvent<HTMLElement>,
@@ -19,9 +21,9 @@ export interface HighlightedSegmentTextProps {
 
 const HIGHLIGHT_CLASSES: Readonly<Record<HighlightKind, string>> = {
   [HighlightKinds.AI]:
-    "rounded-xs bg-mark-ai-bg text-inherit underline decoration-mark-ai-underline decoration-2 underline-offset-2",
+    "cursor-pointer rounded-xs bg-mark-ai-bg text-inherit underline decoration-mark-ai-underline decoration-2 underline-offset-2",
   [HighlightKinds.JOURNALIST]:
-    "rounded-xs bg-mark-journalist-bg text-inherit border-b-2 border-mark-journalist-border",
+    "cursor-pointer rounded-xs bg-mark-journalist-bg text-inherit border-b-2 border-mark-journalist-border",
   [HighlightKinds.PENDING]:
     "cursor-pointer rounded-xs bg-mark-journalist-bg text-inherit border-b-2 border-dashed border-mark-journalist-border",
 };
@@ -31,7 +33,9 @@ export function HighlightedSegmentText({
   claims,
   pendingMarks,
   isActive,
+  focusedClaimId,
   onContextMenu,
+  onClaimHighlightClick,
   onPendingMarkClick,
   onPendingMarkContextMenu,
 }: HighlightedSegmentTextProps) {
@@ -40,6 +44,13 @@ export function HighlightedSegmentText({
     claims,
     pendingMarks,
   );
+  const isFallbackFocused =
+    hasSegmentFallbackAi &&
+    focusedClaimId !== null &&
+    claims.some(
+      (claim) =>
+        claim.id === focusedClaimId && claim.segment_id === segment.id,
+    );
 
   return (
     <p
@@ -48,7 +59,11 @@ export function HighlightedSegmentText({
       className={[
         "text-sm leading-relaxed transition-colors duration-200",
         isActive ? "text-transcript-active" : "text-transcript-inactive",
-        hasSegmentFallbackAi ? "border-l-2 border-mark-ai-underline pl-2.5" : "",
+        hasSegmentFallbackAi
+          ? isFallbackFocused
+            ? "border-l-2 border-focus-ring pl-2.5"
+            : "border-l-2 border-mark-ai-underline pl-2.5"
+          : "",
       ]
         .filter(Boolean)
         .join(" ")}
@@ -60,30 +75,32 @@ export function HighlightedSegmentText({
 
         const { id, kind } = run.highlight;
         const isPending = kind === HighlightKinds.PENDING;
+        const isFocused = !isPending && id === focusedClaimId;
 
         return (
           <mark
             key={`${id}-${index}`}
             data-highlight-kind={kind}
+            data-focused={isFocused ? "true" : undefined}
             title={
               isPending
                 ? "Marked to fact-check — click or right-click to remove"
                 : kind === HighlightKinds.JOURNALIST
-                  ? "Fact-checked passage (journalist)"
-                  : "Fact-checked claim (AI)"
+                  ? "Fact-checked passage (journalist) — click to view in Intelligence"
+                  : "Fact-checked claim (AI) — click to view in Intelligence"
             }
-            onClick={
-              isPending
-                ? (event) => {
-                    const selection = window.getSelection();
-                    if (selection && !selection.isCollapsed) {
-                      return;
-                    }
-                    event.stopPropagation();
-                    onPendingMarkClick(id);
-                  }
-                : undefined
-            }
+            onClick={(event) => {
+              const selection = window.getSelection();
+              if (selection && !selection.isCollapsed) {
+                return;
+              }
+              event.stopPropagation();
+              if (isPending) {
+                onPendingMarkClick(id);
+              } else {
+                onClaimHighlightClick(id);
+              }
+            }}
             onContextMenu={
               isPending
                 ? (event) => {
@@ -97,7 +114,12 @@ export function HighlightedSegmentText({
                   }
                 : undefined
             }
-            className={HIGHLIGHT_CLASSES[kind]}
+            className={[
+              HIGHLIGHT_CLASSES[kind],
+              isFocused ? "ring-1 ring-focus-ring" : "",
+            ]
+              .filter(Boolean)
+              .join(" ")}
           >
             {run.text}
           </mark>
